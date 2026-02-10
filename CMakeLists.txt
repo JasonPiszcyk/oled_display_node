@@ -23,7 +23,6 @@ endif()
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   std_msgs
-  genmsg
   rosidl_default_runtime
 )
 
