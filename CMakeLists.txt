@@ -24,7 +24,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   std_msgs
   genmsg
-  message_generation
+  rosidl_default_runtime
 )
 
 # find_package(backward_ros REQUIRED)
