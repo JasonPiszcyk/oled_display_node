@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(oled_display_node)
 
+find_package(ros2_control_cmake REQUIRED)
 set_compiler_options()
 export_windows_symbols()
 
