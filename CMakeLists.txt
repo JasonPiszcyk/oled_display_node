@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(oled_display_node)
 
-set(MSG_INTERFACE_NAME "oled_display")
+set(EXECUTABLE_NAME "oled_display")
 
 ################################################
 ## Set C Options
@@ -39,7 +39,7 @@ endforeach()
 ################################################
 ## Declare ROS messages, services and actions
 ################################################
-rosidl_generate_interfaces(${MSG_INTERFACE_NAME}
+rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DisplayOutput.msg"
   DEPENDENCIES std_msgs
 )
@@ -61,15 +61,18 @@ rosidl_generate_interfaces(${MSG_INTERFACE_NAME}
 #   genmsg::genmsg
 #   message_runtime::message_runtime
 # )
+# target_link_libraries(oled_display_node PUBLIC
 
 # Declare Executable
-add_executable(oled_display_node src/oled_display_node.cpp)
+include_directories(include)
+add_executable(${EXECUTABLE_NAME} src/oled_display_node.cpp)
+target_link_libraries(${EXECUTABLE_NAME} PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
 # add_dependencies(oled_display_node ${PROJECT_NAME}_generate_messages_cpp)
 
 #############
 ## Install ##
 #############
-install(TARGETS oled_display_node
+install(TARGETS ${EXECUTABLE_NAME}
     DESTINATION lib/${PROJECT_NAME})
 
 

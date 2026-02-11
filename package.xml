@@ -13,6 +13,7 @@
 
 
   <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>std_msgs</depend>
   <depend>python3-colcon-common-extensions</depend>
   <depend>rclpy</depend>

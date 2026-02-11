@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 #include <oled_display_node/oled_display.hpp>
 #include <oled_display_node/font8x8_basic.hpp>
 
-#include <oled_display/DisplayOutput.hpp>
+#include <oled_display_node/DisplayOutput.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
 
 // Some limited state for display
