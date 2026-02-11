@@ -752,14 +752,14 @@ void displayApiCallback(const oled_display_node::DisplayOutput::ConstPtr& msg)
      // Now send data to the display
 
      switch (msg->action_type) {
-         case oled_display_node::DisplayOutput::display_startup_string:
+         case oled_display_node::DisplayOutput::DISPLAY_STARTUP_STRING:
             displaySetStartupString(msg->row, msg->text.c_str(), i2cSemLockId);
             break;
-         case oled_display_node::DisplayOutput::display_set_brightness:
+         case oled_display_node::DisplayOutput::DISPLAY_SET_BRIGHTNESS:
             displaySetBrightness(msg->attributes, i2cSemLockId);
             break;
-         case oled_display_node::DisplayOutput::display_all:
-         case oled_display_node::DisplayOutput::display_substring:
+         case oled_display_node::DisplayOutput::DISPLAY_ALL:
+         case oled_display_node::DisplayOutput::DISPLAY_SUBSTRING:
             displayUpdate(msg->text.c_str(), msg->attributes, msg->row, msg->column, msg->num_chars, i2cSemLockId);
             break;
          default:

@@ -3,10 +3,10 @@
 # A comment field is used to assist user debug
 
 # action_type values
-uint8  display_all=1              # Message to fill entire display
-uint8  display_substring=2        # Message for a set of characters on one line
-uint8  display_startup_string=3   # Reserved for future use for non-volatile startup string
-uint8  display_set_brightness=4   # Sets display brightness. attributes is the brightness
+uint8  DISPLAY_ALL=1              # Message to fill entire display
+uint8  DISPLAY_SUBSTRING=2        # Message for a set of characters on one line
+uint8  DISPLAY_STARTUP_STRING=3   # Reserved for future use for non-volatile startup string
+uint8  DISPLAY_SET_BRIGHTNESS=4   # Sets display brightness. attributes is the brightness
 
 int32  action_type                # The type of action to be taken. See MSG_DISPLAY for values
 int32  row                        # The display row of characters for this message
