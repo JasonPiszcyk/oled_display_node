@@ -24,6 +24,7 @@ endif()
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   std_msgs
+  sensor_msgs
   rosidl_default_generators
   rosidl_default_runtime
 )
@@ -44,8 +45,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES std_msgs
 )
 
-rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(${EXECUTABLE_NAME}  "${cpp_typesupport_target}") 
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME}
+  "rosidl_typesupport_cpp"
+)
 
 ################################################
 ## Build
@@ -68,7 +70,12 @@ target_link_libraries(${EXECUTABLE_NAME}  "${cpp_typesupport_target}")
 # Declare Executable
 include_directories(include)
 add_executable(${EXECUTABLE_NAME} src/oled_display_node.cpp)
-target_link_libraries(${EXECUTABLE_NAME} PUBLIC rclcpp::rclcpp ${std_msgs_TARGETS})
+target_link_libraries(${EXECUTABLE_NAME} PUBLIC 
+  rclcpp::rclcpp
+  ${std_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  "${cpp_typesupport_target}"
+)
 # add_dependencies(oled_display_node ${PROJECT_NAME}_generate_messages_cpp)
 
 #############
