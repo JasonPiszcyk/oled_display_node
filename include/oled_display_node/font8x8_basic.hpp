@@ -1,12 +1,12 @@
 /*
- * font8x8_basic.h
+ * font8x8_basic.hpp
  *
  * A table for direct lookup of ASCII char used as an index.
  * Code can get 8 byte rectangle for use as pixels from the table
  */
 
-#ifndef MAIN_FONT8X8_BASIC_H_
-#define MAIN_FONT8X8_BASIC_H_
+#ifndef MAIN_FONT8X8_BASIC_HPP_
+#define MAIN_FONT8X8_BASIC_HPP_
 
 /*
    Constant: font8x8_basic_tr
@@ -168,4 +168,4 @@ uint8_t font8x8_basic_tr[128][8] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }    // U+007F
 };
 
-#endif /* MAIN_FONT8X8_BASIC_H_ */
+#endif /* MAIN_FONT8X8_BASIC_HPP_ */

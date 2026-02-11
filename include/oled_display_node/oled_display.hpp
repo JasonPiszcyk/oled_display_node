@@ -10,8 +10,8 @@
 // The code is considered to be a starting point and not a finished and polished codebase
 //
 
-#ifndef OLED_DISPLAY_H_
-#define OLED_DISPLAY_H_
+#ifndef OLED_DISPLAY_HPP_
+#define OLED_DISPLAY_HPP_
 
 
 #define DISPLAY_TYPE_NONE         0
@@ -112,4 +112,4 @@ typedef struct {
 // Charge Pump (pg.62)
 #define OLED_CMD_SET_CHARGE_PUMP        0x8D    // follow with 0x14
 
-#endif /* OLED_DISPLAY_H_ */
+#endif /* OLED_DISPLAY_HPP_ */

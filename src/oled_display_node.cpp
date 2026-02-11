@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
  * Full update or substring updates starting at a given line and row are supported.
  */
 
-#define  THIS_NODE_NAME    "oled_display_node"        // The Name for this ROS node. Used in ROS_INFO and more
+#define  THIS_NODE_NAME    "oled_display_node"        // The Name for this ROS node. Used in RCLCPP_INFO and more
 
 // Default lines to output text to from this module
 #define  DISP_LINE_HOSTNAME    0
@@ -114,9 +114,10 @@ int main(int argc, char** argv) {
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/ros.h"
-#include "std_msgs/String.h"
-#include "std_msgs/Bool.h"
+#include <chrono>
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 // These next few are for I2C and ioctls and file opens
 #include <linux/i2c-dev.h>
@@ -130,11 +131,11 @@ int main(int argc, char** argv) {
 #include <unistd.h>
 
 // Includes specific to the display driver and font
-#include <oled_display_node/oled_display.h>
-#include <oled_display_node/font8x8_basic.h>
+#include <oled_display_node/oled_display.hpp>
+#include <oled_display_node/font8x8_basic.hpp>
 
-#include <oled_display_node/DisplayOutput.h>
-#include <sensor_msgs/BatteryState.h>
+#include <oled_display/DisplayOutput.hpp>
+#include <sensor_msgs/msg/battery_state.hpp>
 
 // Some limited state for display
 std::string g_batteryPercentage = "    ";
@@ -202,8 +203,8 @@ void  getIpAddressses(std::string &ethAddress, std::string &wlanAddress, int log
     }
 
     if (logFindings != 0) {
-            ROS_INFO("%s The eth0 IP will be the displayed IP of %s", THIS_NODE_NAME, ethAddress.c_str());
-            ROS_INFO("%s The wlan0 IP will be the displayed IP of %s", THIS_NODE_NAME, wlanAddress.c_str());
+            RCLCPP_INFO("%s The eth0 IP will be the displayed IP of %s", THIS_NODE_NAME, ethAddress.c_str());
+            RCLCPP_INFO("%s The wlan0 IP will be the displayed IP of %s", THIS_NODE_NAME, wlanAddress.c_str());
     }
 
     return;
@@ -263,7 +264,7 @@ static int i2c_read(const char *i2cDevFile, uint8_t i2c7bitAddr,
         struct    i2c_rdwr_ioctl_data msgset[1];          // Set of transaction segments
 
         if ((fd = open(i2cDevFile, O_RDWR)) < 0) {        // Open port for reading and writing
-            ROS_ERROR("Cannot open I2C def of %s with error %s", i2cDevFile, strerror(errno));
+            RCLCPP_ERROR("Cannot open I2C def of %s with error %s", i2cDevFile, strerror(errno));
             retCode = IO_ERR_DEV_OPEN_FAILED;
             goto exitWithNoClose;
         }
@@ -283,7 +284,7 @@ static int i2c_read(const char *i2cDevFile, uint8_t i2c7bitAddr,
 
                 // The ioctl here will execute I2C transaction with kernel enforced lock
                 if (ioctl(fd, I2C_RDWR, &msgset) < 0) {
-                        ROS_ERROR("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+                        RCLCPP_ERROR("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
                         retCode = IO_ERR_IOCTL_ADDR_SET;
                         goto exitWithFileClose;
                 }
@@ -291,14 +292,14 @@ static int i2c_read(const char *i2cDevFile, uint8_t i2c7bitAddr,
         else {
     // The ioctl here will address the I2C slave device making it ready for 1 or more other bytes
             if (ioctl(fd, I2C_SLAVE, slaveAddress) != 0) {    // Set the port options and addr of the dev
-                    ROS_ERROR("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+                    RCLCPP_ERROR("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
                     retCode = IO_ERR_IOCTL_ADDR_SET;
                     goto exitWithFileClose;
             }
 
                 bytesRead = read(fd, pBuffer, numBytes);
                 if (bytesRead != numBytes) {                  // Verify that the number of bytes we requested were read
-                    ROS_ERROR("Failed to read from I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+                    RCLCPP_ERROR("Failed to read from I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
                     retCode = IO_ERR_READ_FAILED;
                     goto exitWithFileClose;
                 }
@@ -338,20 +339,20 @@ static int i2c_write(const char *i2cDevFile, uint8_t i2c7bitAddr, uint8_t *pBuff
 
         // Open port for writing
         if ((fd = open(i2cDevFile, O_WRONLY)) < 0) {
-            ROS_ERROR_ONCE("Cannot open I2C def of %s with error %s", i2cDevFile, strerror(errno));
+            RCLCPP_ERROR_ONCE("Cannot open I2C def of %s with error %s", i2cDevFile, strerror(errno));
             retCode = IO_ERR_DEV_OPEN_FAILED;
             goto exitWithNoClose;
         }
 
         // The ioctl here will address the I2C slave device making it ready for 1 or more other bytes
         if (ioctl(fd, I2C_SLAVE, slaveAddress) != 0) {  // Set the port options and addr of the dev
-            ROS_ERROR_ONCE("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+            RCLCPP_ERROR_ONCE("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
             retCode = IO_ERR_IOCTL_ADDR_SET;
             goto exitWithFileClose;
         }
 
         if (write(fd, pBuffer, numBytes) != numBytes) {
-                ROS_ERROR_ONCE("Failed to write to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+                RCLCPP_ERROR_ONCE("Failed to write to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
                 retCode = IO_ERR_WRITE_FAILED;
                 goto exitWithFileClose;
         }
@@ -395,17 +396,17 @@ int dispOled_detectDisplayType(std::string devName, uint8_t i2c7bitAddr, int *di
                 // Read the status register at chip addr 0 to decide on chip type - set flag to true
                 retCount = i2c_read(&device[0], i2c7bitAddr, &buf[0], 1, 0x00, true);
                 if (retCount < 0) {
-                        ROS_ERROR("Error 0x%x in reading OLED status register at 7bit I2CAddr 0x%x",
+                        RCLCPP_ERROR("Error 0x%x in reading OLED status register at 7bit I2CAddr 0x%x",
                                 retCount, i2c7bitAddr);
                         *dispType = DISPLAY_TYPE_NONE;
                         retCode = IO_ERR_READ_FAILED;
                 } else if (retCount != 1) {
-                        ROS_ERROR("Cannot read byte from OLED status register at 7bit Addr 0x%x",
+                        RCLCPP_ERROR("Cannot read byte from OLED status register at 7bit Addr 0x%x",
                         i2c7bitAddr);
                         *dispType = DISPLAY_TYPE_NONE;
                         retCode = IO_ERR_READ_LENGTH;;
                 } else {
-                        ROS_INFO("Read OLED status register as 0x%02x on pass %d", buf[0],i);
+                        RCLCPP_INFO("Read OLED status register as 0x%02x on pass %d", buf[0],i);
                         if ((buf[0] & 0x07) == 0x06) {
                                 // We found lower 3 bit as a 6 but datasheet does not spec it
                                 vote1306++;
@@ -466,7 +467,7 @@ int dispOled_initCtx(std::string devName, dispCtx_t *dispCtx, int dispType, uint
                 dispCtx->endHorzPixel = SH1106_END_HORZ_PIXEL;
                 break;
         default:
-                ROS_ERROR("%s: Unsupported display type of %d\n", THIS_NODE_NAME, dispType);
+                RCLCPP_ERROR("%s: Unsupported display type of %d\n", THIS_NODE_NAME, dispType);
                 retCode = IO_ERR_BAD_DISP_CONTEXT;
                 break;
         }
@@ -505,12 +506,12 @@ int dispOled_init(std::string devName, dispCtx_t *dispCtx, int displayType, uint
         switch (dispCtx->dispType) {
         case DISPLAY_TYPE_SSD1306:
                 // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
-                ROS_INFO("%s Setup for SSD1306 controller on the OLED display.", THIS_NODE_NAME);
+                RCLCPP_INFO("%s Setup for SSD1306 controller on the OLED display.", THIS_NODE_NAME);
                 retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &ssd1306_init_bytes[0], SSD1306_INIT_BYTE_COUNT);
                 break;
         case DISPLAY_TYPE_SH1106:
                 // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
-                ROS_INFO("%s Setup for SH1106 controller on the OLED display.", THIS_NODE_NAME);
+                RCLCPP_INFO("%s Setup for SH1106 controller on the OLED display.", THIS_NODE_NAME);
                 retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &sh1106_init_bytes[0], SH1106_INIT_BYTE_COUNT);
                 break;
         default:
@@ -518,7 +519,7 @@ int dispOled_init(std::string devName, dispCtx_t *dispCtx, int displayType, uint
                 break;
         }
         if (retCode != 0) {
-                ROS_ERROR_ONCE("%s: Setup for OLED display failed with error 0x%04x", THIS_NODE_NAME, retCode);
+                RCLCPP_ERROR_ONCE("%s: Setup for OLED display failed with error 0x%04x", THIS_NODE_NAME, retCode);
         }
 
         return retCode;
@@ -689,7 +690,7 @@ int  displayUpdate(std::string text, int attributes, int row, int column, int nu
         messageLength = num_chars;
     }
 
-    ROS_INFO("%s: Write '%s' to row %d and column %d\n", THIS_NODE_NAME, text.c_str(), row, column);
+    RCLCPP_INFO("%s: Write '%s' to row %d and column %d\n", THIS_NODE_NAME, text.c_str(), row, column);
 
     dispCtx_t oledDispCtx;
     char charBuf[120];
@@ -703,7 +704,7 @@ int  displayUpdate(std::string text, int attributes, int row, int column, int nu
 
     // Would be nice to account for non-zero cursor due to cursor control sometime too ...
     if (messageLength > oledDispCtx.maxColumn) {
-        ROS_ERROR("%s: Unsupported character count of %d\n", THIS_NODE_NAME, messageLength);
+        RCLCPP_ERROR("%s: Unsupported character count of %d\n", THIS_NODE_NAME, messageLength);
         return -9;
     }
 
@@ -724,7 +725,7 @@ int displaySetStartupString(int line, std::string text, int semLock)
     int  messageLength = text.length();
     bool dbgPrint = false;
 
-    ROS_ERROR("%s: OLED display startup string not yet supported, ignore\n", THIS_NODE_NAME);
+    RCLCPP_ERROR("%s: OLED display startup string not yet supported, ignore\n", THIS_NODE_NAME);
     return 0;
 }
 
@@ -734,16 +735,16 @@ int displaySetBrightness(int brightness, int semLock)
     std::string module = "displaySetBrightness";
     bool dbgPrint = false;
 
-    ROS_ERROR("%s: OLED display brightness setting not supported, iignore\n", THIS_NODE_NAME);
+    RCLCPP_ERROR("%s: OLED display brightness setting not supported, iignore\n", THIS_NODE_NAME);
     return 0;
 }
 
 /**
  * Receive messages for display output
  */
-void displayApiCallback(const oled_display_node::DisplayOutput::ConstPtr& msg)
+void displayApiCallback(const oled_display::DisplayOutput::ConstPtr& msg)
 {
-    ROS_INFO("%s heard display output msg: of action_type %d row %d column %d num_chars %d attr 0x%x text %s comment %s]",
+    RCLCPP_INFO("%s heard display output msg: of action_type %d row %d column %d num_chars %d attr 0x%x text %s comment %s]",
                                 THIS_NODE_NAME, msg->action_type, msg->row, msg->column, msg->num_chars, msg->attributes,
                                 msg->text.c_str(), msg->comment.c_str());
 
@@ -752,14 +753,14 @@ void displayApiCallback(const oled_display_node::DisplayOutput::ConstPtr& msg)
      // Now send data to the display
 
      switch (msg->action_type) {
-         case oled_display_node::DisplayOutput::DISPLAY_STARTUP_STRING:
+         case oled_display::DisplayOutput::DISPLAY_STARTUP_STRING:
             displaySetStartupString(msg->row, msg->text.c_str(), i2cSemLockId);
             break;
-         case oled_display_node::DisplayOutput::DISPLAY_SET_BRIGHTNESS:
+         case oled_display::DisplayOutput::DISPLAY_SET_BRIGHTNESS:
             displaySetBrightness(msg->attributes, i2cSemLockId);
             break;
-         case oled_display_node::DisplayOutput::DISPLAY_ALL:
-         case oled_display_node::DisplayOutput::DISPLAY_SUBSTRING:
+         case oled_display::DisplayOutput::DISPLAY_ALL:
+         case oled_display::DisplayOutput::DISPLAY_SUBSTRING:
             displayUpdate(msg->text.c_str(), msg->attributes, msg->row, msg->column, msg->num_chars, i2cSemLockId);
             break;
          default:
@@ -798,7 +799,7 @@ void motorPowerActiveApiCallback(const std_msgs::Bool::ConstPtr& msg)
         newPowerState = "OFF";
     }
     if (newPowerState != g_motorPowerActive) {
-        ROS_INFO("%s Motor power active went from %s to %s", THIS_NODE_NAME, g_motorPowerActive.c_str(), newPowerState.c_str());
+        RCLCPP_INFO("%s Motor power active went from %s to %s", THIS_NODE_NAME, g_motorPowerActive.c_str(), newPowerState.c_str());
     }
 
     g_motorPowerActive = newPowerState;
@@ -813,7 +814,7 @@ void firmwareVersionCallback(const std_msgs::String::ConstPtr& msg)
     std::string newFwVersion = msg->data.substr(0, msg->data.find(' '));
 
     if (newFwVersion.compare(g_firmwareVersion) != 0) {  // log any change to the value
-        ROS_INFO("%s New Firmware version received: %s. Old value was %s.", THIS_NODE_NAME,
+        RCLCPP_INFO("%s New Firmware version received: %s. Old value was %s.", THIS_NODE_NAME,
             msg->data.c_str(), g_firmwareVersion.c_str());
     }
 
@@ -827,13 +828,11 @@ int main(int argc, char **argv)
 {
     double updateDelay = 0.25;
 
-    // The ros::init() function initializes ROS and needs to see argc and argv
-    ros::init(argc, argv, THIS_NODE_NAME);
+    // The rclcpp::init() function initializes ROS and needs to see argc and argv
+    rclcpp::init(argc, argv);
+    auto node = rclcpp::Node::make_shared(THIS_NODE_NAME);
 
-    // Setup a NodeHandle for the main access point to communications with the ROS system.
-    ros::NodeHandle nh;
-
-    ROS_INFO("%s OLED Display node starting.", THIS_NODE_NAME);
+    RCLCPP_INFO("%s OLED Display node starting.", THIS_NODE_NAME);
 
     // Get our hostname on the network
     std::string hostname = getPopen("uname -n");
@@ -846,56 +845,57 @@ int main(int argc, char **argv)
     char dispBuf[32];
     int  dispError = 0;
 
-    ROS_INFO("%s Initialize OLED display.", THIS_NODE_NAME);
+    RCLCPP_INFO("%s Initialize OLED display.", THIS_NODE_NAME);
     dispError = dispOled_init(OLED_I2C_DEVICE, &g_oledDisplayCtx, OLED_DISPLAY_TYPE, OLED_DISPLAY_ADDR);
 
     if (dispError == 0) {
         dispOled_clearDisplay(&g_oledDisplayCtx);
-        ros::Duration(1.0).sleep();
+        rclcpp::sleep_for(std::chrono::seconds(1));
         dispOled_writeText(&g_oledDisplayCtx, DISP_LINE_HOSTNAME, 0, DISP_TEXT_START_MODE, hostname.c_str());
-        ros::Duration(updateDelay).sleep();
+        rclcpp::sleep_for(std::chrono::seconds(updateDelay));
         dispOled_writeText(&g_oledDisplayCtx, DISP_LINE_IP_WLAN, 0, DISP_TEXT_START_MODE, displayedWLANAddress.c_str());
-        ros::Duration(updateDelay).sleep();
+        rclcpp::sleep_for(std::chrono::seconds(updateDelay));
         dispOled_writeText(&g_oledDisplayCtx, DISP_LINE_IP_ETH, 0, DISP_TEXT_START_MODE, displayedETHAddress.c_str());
-        ros::Duration(updateDelay).sleep();
+        rclcpp::sleep_for(std::chrono::seconds(updateDelay));
 
-        ROS_INFO("%s: Display subsystem ready! ", THIS_NODE_NAME);
-        ROS_INFO("%s: Listening on topic /%s for messages of type %s", THIS_NODE_NAME,
+        RCLCPP_INFO("%s: Display subsystem ready! ", THIS_NODE_NAME);
+        RCLCPP_INFO("%s: Listening on topic /%s for messages of type %s", THIS_NODE_NAME,
         ROS_TOPIC_DISPLAY_NODE, "DisplayOutput" );
     } else {
-        ROS_ERROR("%s: Display did not initialize properly and will not be used! ", THIS_NODE_NAME);
+        RCLCPP_ERROR("%s: Display did not initialize properly and will not be used! ", THIS_NODE_NAME);
         return 0;
     }
 
     // Display topic and we then get callbacks for each message
-    ros::Subscriber sub = nh.subscribe(ROS_TOPIC_DISPLAY_NODE, 100, displayApiCallback);
+    auto sub = node->create_subscription<oled_display::DisplayOutput>(ROS_TOPIC_DISPLAY_NODE, 100, &displayApiCallback);
+
 
     // Battery_state topic and we then get callbacks for each message
-    ros::Subscriber sub2 = nh.subscribe("battery_state", 100, batteryStateApiCallback);
+    auto sub2 = node->create_subscription<sensor_msgs::BatteryState>("battery_state", 100, &batteryStateApiCallback);
 
     // Motor_power_active topic
-    ros::Subscriber sub3 = nh.subscribe("motor_power_active", 100, motorPowerActiveApiCallback);
+    auto sub3 = node->create_subscription<std_msgs::Bool>("motor_power_active", 100, &motorPowerActiveApiCallback);
 
     // Firmware state topic
-    ros::Subscriber sub4 = nh.subscribe("firmware_version", 100, firmwareVersionCallback);
+    auto sub4 = node->create_subscription<std_msgs::String>("firmware_version", 100, &firmwareVersionCallback);
 
     // We will refresh the lines from time to time in case IP addr has changed
-    ros::Rate loop_rate(0.5);
+    rclcpp::Rate loop_rate(0.5);
     int32_t loopIdx = 0;
 
     // mainloop:
-    while ((dispError == 0) && ros::ok())
+    while ((dispError == 0) && rclcpp::ok())
     {
         loopIdx++;
         hostname = getPopen("uname -n");
         dispError |= dispOled_writeText(&g_oledDisplayCtx, DISP_LINE_HOSTNAME, 0, DISP_TEXT_START_MODE, hostname.c_str());
-        ros::Duration(updateDelay).sleep();
+        rclcpp::sleep_for(std::chrono::seconds(updateDelay));
 
         getIpAddressses(displayedETHAddress, displayedWLANAddress, 0);
         dispError |= dispOled_writeText(&g_oledDisplayCtx, DISP_LINE_IP_WLAN, 0, DISP_TEXT_START_MODE, displayedWLANAddress.c_str());
-        ros::Duration(updateDelay).sleep();
+        rclcpp::sleep_for(std::chrono::seconds(updateDelay));
         dispError |= dispOled_writeText(&g_oledDisplayCtx, DISP_LINE_IP_ETH, 0, DISP_TEXT_START_MODE, displayedETHAddress.c_str());
-        ros::Duration(updateDelay).sleep();
+        rclcpp::sleep_for(std::chrono::seconds(updateDelay));
 
         // If there is a battery_state topic and we get the callback also show battery voltage
         if (g_batteryVoltage > 0.0) {
@@ -918,7 +918,7 @@ int main(int argc, char **argv)
 
             std::string battText = "Bat:" + stream.str();
             dispError |= dispOled_writeText(&g_oledDisplayCtx, DISP_LINE_BATT_VOLTS, 1, DISP_TEXT_START_MODE, battText.c_str());
-            ros::Duration(updateDelay).sleep();
+            rclcpp::sleep_for(std::chrono::seconds(updateDelay));
         }
 
         // If you change the text, use same number of chars so display does not move around on the line
@@ -927,14 +927,14 @@ int main(int argc, char **argv)
 
         std::string motPowerText = infoStream.str();
         dispError |= dispOled_writeText(&g_oledDisplayCtx, DISP_LINE_MOTOR_POWER, 1, DISP_TEXT_START_MODE, motPowerText.c_str());
-        ros::Duration(updateDelay).sleep();
+        rclcpp::sleep_for(std::chrono::seconds(updateDelay));
 
-        ros::spinOnce();
+        rclcpp::spin_all(node, 0s);
         loop_rate.sleep();
     }
 
-    // ros::spin() will enter a loop allowing callbacks to happen. Exits on Ctrl-C
-    ros::spin();
+    // rclcpp::spin() will enter a loop allowing callbacks to happen. Exits on Ctrl-C
+    rclcpp::spin(node);
 
     return 0;
 }
