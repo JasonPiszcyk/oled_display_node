@@ -52,15 +52,15 @@ class Controller:
        self.displayCmdPub = rospy.Publisher("/display_node", DisplayOutput, queue_size=1)
 
     def publishDisplayCommand(self, row, column, text, comment):
-       numChars = len(text)
-       if numChars > 15:
-         numChars = 15
+       num_chars = len(text)
+       if num_chars > 15:
+         num_chars = 15
 
        dispMsg = DisplayOutput()
-       dispMsg.actionType    = 2               # Just use MSG_DISPLAY_SUBSTRING
+       dispMsg.action_type   = 2               # Just use MSG_DISPLAY_SUBSTRING
        dispMsg.row           = row             # Display row with 0 as top row
        dispMsg.column        = column          # Display column in pixels
-       dispMsg.numChars      = numChars        # Number of chars to be written
+       dispMsg.num_chars     = num_chars        # Number of chars to be written
        dispMsg.attributes    = 0               # Just write with no attributes
        dispMsg.text          = text            # The text to be written
        dispMsg.comment       = comment         # Comment in the message, no functional use

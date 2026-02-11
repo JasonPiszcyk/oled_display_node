@@ -680,13 +680,13 @@ int ipc_sem_unlock(int semLock) {
  * Return of 0 is ok, negative values are failure cases
  * If the semLock is supplied we lock a semaphore for the update
  */
-int  displayUpdate(std::string text, int attributes, int row, int column, int numChars, int semLock)
+int  displayUpdate(std::string text, int attributes, int row, int column, int num_chars, int semLock)
 {
     int  messageLength = text.length();
     bool dbgPrint = false;
 
-    if (numChars > 0) {
-        messageLength = numChars;
+    if (num_chars > 0) {
+        messageLength = num_chars;
     }
 
     ROS_INFO("%s: Write '%s' to row %d and column %d\n", THIS_NODE_NAME, text.c_str(), row, column);
@@ -743,24 +743,24 @@ int displaySetBrightness(int brightness, int semLock)
  */
 void displayApiCallback(const oled_display_node::DisplayOutput::ConstPtr& msg)
 {
-    ROS_INFO("%s heard display output msg: of actionType %d row %d column %d numChars %d attr 0x%x text %s comment %s]",
-                                THIS_NODE_NAME, msg->actionType, msg->row, msg->column, msg->numChars, msg->attributes,
+    ROS_INFO("%s heard display output msg: of action_type %d row %d column %d num_chars %d attr 0x%x text %s comment %s]",
+                                THIS_NODE_NAME, msg->action_type, msg->row, msg->column, msg->num_chars, msg->attributes,
                                 msg->text.c_str(), msg->comment.c_str());
 
     int i2cSemLockId = -9;
 
      // Now send data to the display
 
-     switch (msg->actionType) {
-         case oled_display_node::DisplayOutput::DISPLAY_STARTUP_STRING:
+     switch (msg->action_type) {
+         case oled_display_node::DisplayOutput::display_startup_string:
             displaySetStartupString(msg->row, msg->text.c_str(), i2cSemLockId);
             break;
-         case oled_display_node::DisplayOutput::DISPLAY_SET_BRIGHTNESS:
+         case oled_display_node::DisplayOutput::display_set_brightness:
             displaySetBrightness(msg->attributes, i2cSemLockId);
             break;
-         case oled_display_node::DisplayOutput::DISPLAY_ALL:
-         case oled_display_node::DisplayOutput::DISPLAY_SUBSTRING:
-            displayUpdate(msg->text.c_str(), msg->attributes, msg->row, msg->column, msg->numChars, i2cSemLockId);
+         case oled_display_node::DisplayOutput::display_all:
+         case oled_display_node::DisplayOutput::display_substring:
+            displayUpdate(msg->text.c_str(), msg->attributes, msg->row, msg->column, msg->num_chars, i2cSemLockId);
             break;
          default:
             break;
