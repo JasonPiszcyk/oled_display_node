@@ -866,18 +866,18 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    // Display topic and we then get callbacks for each message
-    auto sub = node->create_subscription<oled_display::DisplayOutput>(ROS_TOPIC_DISPLAY_NODE, 100, &displayApiCallback);
+//     // Display topic and we then get callbacks for each message
+//     auto sub = node->create_subscription<oled_display::DisplayOutput>(ROS_TOPIC_DISPLAY_NODE, 100, &displayApiCallback);
 
 
-    // Battery_state topic and we then get callbacks for each message
-    auto sub2 = node->create_subscription<sensor_msgs::BatteryState>("battery_state", 100, &batteryStateApiCallback);
+//     // Battery_state topic and we then get callbacks for each message
+//     auto sub2 = node->create_subscription<sensor_msgs::BatteryState>("battery_state", 100, &batteryStateApiCallback);
 
-    // Motor_power_active topic
-    auto sub3 = node->create_subscription<std_msgs::Bool>("motor_power_active", 100, &motorPowerActiveApiCallback);
+//     // Motor_power_active topic
+//     auto sub3 = node->create_subscription<std_msgs::Bool>("motor_power_active", 100, &motorPowerActiveApiCallback);
 
-    // Firmware state topic
-    auto sub4 = node->create_subscription<std_msgs::String>("firmware_version", 100, &firmwareVersionCallback);
+//     // Firmware state topic
+//     auto sub4 = node->create_subscription<std_msgs::String>("firmware_version", 100, &firmwareVersionCallback);
 
     // We will refresh the lines from time to time in case IP addr has changed
     rclcpp::Rate loop_rate(0.5);

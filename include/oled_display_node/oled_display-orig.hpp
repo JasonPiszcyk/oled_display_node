@@ -20,7 +20,7 @@
 #define DISPLAY_TYPE_SH1106       2    // 1.3" diagonal 128x64
 
 // ROS level defines specific to this node and its messages are here
-#define  ROS_TOPIC_DISPLAY_NODE     "display_node"
+// #define  ROS_TOPIC_DISPLAY_NODE     "display_node"
 
 // max segment index for (pixel) on right of display (seg 0 is 1st on left)
 // This must be a power of 2 minus 1 for code to work properly
