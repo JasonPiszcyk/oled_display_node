@@ -91,7 +91,8 @@ inline const std::string TOPIC_BATTERY = "battery_state";
 inline const std::string TOPIC_MOTOR = "motor_power_active";
 inline const std::string TOPIC_FIRMWARE = "firmware_version";
 
-inline const rmw_qos_profile_t SUB_QOS_PROFILE = 100;
+inline const int SUB_QOS_PROFILE = 100;
+// inline const rmw_qos_profile_t SUB_QOS_PROFILE = 100;
 
 
 /******************************************************************************
@@ -106,7 +107,7 @@ class OledSubscribers : public rclcpp::Node
     OledSubscribers();
 
     // Methods
-    void exampleMethod();
+    // void exampleMethod();
 
   private:
     int exampleAttribute; // Data member (attribute)

@@ -67,7 +67,7 @@
 #include "oled_subscribers.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "oled_display_node/msg/display_output.hpp"
+// #include "oled_display_node/msg/display_output.hpp"
 
 
 /******************************************************************************
@@ -98,61 +98,54 @@ OledSubscribers::OledSubscribers()
 : Node(OLED_TOPIC_SUBSCRIBER)
 {
     // Display topic and we then get callbacks for each message
-    sub_display = this->create_subscription<oled_display::DisplayOutput>(
-      TOPIC_DISPLAY_NODE, SUB_QOS_PROFILE, &displayApiCallback
-    );
-
+    // auto sub_display = this->create_subscription<oled_display::DisplayOutput>(
+    //   TOPIC_DISPLAY_NODE, SUB_QOS_PROFILE, &displayApiCallback
+    // );
 
     // Battery_state topic and we then get callbacks for each message
-    sub_battery = node->create_subscription<sensor_msgs::BatteryState>(
-      TOPIC_BATTERY, SUB_QOS_PROFILE, &batteryStateApiCallback
-    );
+    // sub_battery = node->create_subscription<sensor_msgs::BatteryState>(
+    //   TOPIC_BATTERY, SUB_QOS_PROFILE, &batteryStateApiCallback
+    // );
 
     // Motor_power_active topic
-    sub_motor = node->create_subscription<std_msgs::Bool>(
-      TOPIC_MOTOR, SUB_QOS_PROFILE, &motorPowerActiveApiCallback
-    );
+    // sub_motor = node->create_subscription<std_msgs::Bool>(
+    //   TOPIC_MOTOR, SUB_QOS_PROFILE, &motorPowerActiveApiCallback
+    // );
 
     // Firmware state topic
-    sub_firmware = node->create_subscription<std_msgs::String>(
-      TOPIC_FIRMWARE, SUB_QOS_PROFILE, &firmwareVersionCallback
-    );
+    // sub_firmware = node->create_subscription<std_msgs::String>(
+    //   TOPIC_FIRMWARE, SUB_QOS_PROFILE, &firmwareVersionCallback
+    // );
 }
 
 //
 // Receive messages for display output
 //
-void displayApiCallback(const oled_display::DisplayOutput::ConstPtr& msg)
-{
-    RCLCPP_INFO(
-      this->get_logger(),
-      "%s heard display output msg: of action_type %d row %d column %d "
-      "num_chars %d attr 0x%x text %s comment %s]",
-      OLED_NODE_NAME, msg->action_type, msg->row, msg->column, msg->num_chars,
-      msg->attributes, msg->text.c_str(), msg->comment.c_str()
-    );
+// void displayApiCallback(const oled_display::DisplayOutput::ConstPtr& msg)
+// {
+//     RCLCPP_INFO(
+//       this->get_logger(),
+//       "%s heard display output msg: of action_type %d row %d column %d "
+//       "num_chars %d attr 0x%x text %s comment %s]",
+//       OLED_NODE_NAME, msg->action_type, msg->row, msg->column, msg->num_chars,
+//       msg->attributes, msg->text.c_str(), msg->comment.c_str()
+//     );
 
-    int i2cSemLockId = -9;
+//     int i2cSemLockId = -9;
 
-     // Now send data to the display
-     switch (msg->action_type) {
-         case oled_display::DisplayOutput::DISPLAY_STARTUP_STRING:
-            displaySetStartupString(msg->row, msg->text.c_str(), i2cSemLockId);
-            break;
-         case oled_display::DisplayOutput::DISPLAY_SET_BRIGHTNESS:
-            displaySetBrightness(msg->attributes, i2cSemLockId);
-            break;
-         case oled_display::DisplayOutput::DISPLAY_ALL:
-         case oled_display::DisplayOutput::DISPLAY_SUBSTRING:
-            displayUpdate(msg->text.c_str(), msg->attributes, msg->row, msg->column, msg->num_chars, i2cSemLockId);
-            break;
-         default:
-            break;
-     }
-}
-
-void OledSubscribers::exampleMethod() {
-  std::cout << "Hello from myMethod!" << std::endl;
-  // Access private members here
-  myNum = 42;
-}
+//      // Now send data to the display
+//      switch (msg->action_type) {
+//          case oled_display::DisplayOutput::DISPLAY_STARTUP_STRING:
+//             displaySetStartupString(msg->row, msg->text.c_str(), i2cSemLockId);
+//             break;
+//          case oled_display::DisplayOutput::DISPLAY_SET_BRIGHTNESS:
+//             displaySetBrightness(msg->attributes, i2cSemLockId);
+//             break;
+//          case oled_display::DisplayOutput::DISPLAY_ALL:
+//          case oled_display::DisplayOutput::DISPLAY_SUBSTRING:
+//             displayUpdate(msg->text.c_str(), msg->attributes, msg->row, msg->column, msg->num_chars, i2cSemLockId);
+//             break;
+//          default:
+//             break;
+//      }
+// }
