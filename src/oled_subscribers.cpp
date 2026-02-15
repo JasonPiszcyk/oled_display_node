@@ -64,10 +64,10 @@
 #include <string>
 
 // Local
-#include "oled_subscribers.hpp"
+#include "oled_display_node/oled_subscribers.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/bool.hpp"
-// #include "oled_display_node/msg/display_output.hpp"
+#include "oled_display_node/msg/display_output.hpp"
 
 
 /******************************************************************************

@@ -47,7 +47,7 @@
 // System
 
 // Local
-#include "oled_subscribers.hpp"
+#include "oled_display_node/oled_subscribers.hpp"
 
 
 /******************************************************************************
