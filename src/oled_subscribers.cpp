@@ -1,5 +1,5 @@
 /*
- * < Short Description >
+ * Oled Subscribers - Subscribe to topics to update the OLED display
  * 
  * Copyright (C) 2025 Jason Piszcyk
  * Email: Jason.Piszcyk@gmail.com
@@ -62,6 +62,7 @@
  ******************************************************************************/
 // System
 #include <string>
+#include <cstdint>
 
 // Local
 #include "oled_display_node/oled_subscribers.hpp"
@@ -94,9 +95,24 @@
 //
 // Constructor
 //
+// @brief   Initialisation for the instance
+//
+// @param   (if none delete)
+//
+// @return  void
+//
 OledSubscribers::OledSubscribers()
 : Node(OLED_TOPIC_SUBSCRIBER)
 {
+    // Parameters (in YAML File)
+    this->declare_parameter<std::string>("i2c_device", DEFAULT_I2C_DEVICE);
+    this->declare_parameter<int>(
+        "i2c_slave_address", DEFAULT_I2C_SLAVE_ADDRESS
+    );
+    this->declare_parameter<uint8_t>(
+        "i2c_chip_register_address", DEFAULT_I2C_CHIP_REGISTER_ADDRESS
+    );
+
     // Display topic and we then get callbacks for each message
     // auto sub_display = this->create_subscription<oled_display::DisplayOutput>(
     //   TOPIC_DISPLAY_NODE, SUB_QOS_PROFILE, &displayApiCallback

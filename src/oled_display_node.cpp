@@ -45,6 +45,7 @@
  *
  ******************************************************************************/
 // System
+#include <memory>
 
 // Local
 #include "oled_display_node/oled_subscribers.hpp"
@@ -55,7 +56,22 @@
  * I choose to start the main code...  Here
  *
  ******************************************************************************/
-int main(int argc, char **argv)
+//
+// @brief   Entry point for the program
+//
+// @param   argc - Number of arguments
+// @param   argv - Array of strings representing the arguments
+//
+// @return  int - Value indicating status of program
+//
+int main(int argc, char *argv[])
 {
+  rclcpp::init(argc, argv);
+
+  // The default rclcpp::spin() uses a SingleThreadedExecutor.
+  rclcpp::spin(std::make_shared<OledSubscribers>());
+
+  rclcpp::shutdown();
+
   return 0;
 }

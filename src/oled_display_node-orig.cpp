@@ -253,117 +253,117 @@ static uint8_t sh1106_init_bytes[SH1106_INIT_BYTE_COUNT] = {
  *
  * @return              Returns number of bytes read where 0 or less implies some form of failure
  */
-static int i2c_read(const char *i2cDevFile, uint8_t i2c7bitAddr,
-                                        uint8_t *pBuffer, int numBytes, uint8_t chipRegAddr, bool chipRegAddrFlag)
-{
-        int       fd;                                         // File descriptor
-        const int slaveAddress = i2c7bitAddr;                 // Address of the I2C device
-        int       retCode   = 0;
-        int       bytesRead = 0;
-        struct    i2c_msg msgs[2];                        // Low level representation of one segment of an I2C transaction
-        struct    i2c_rdwr_ioctl_data msgset[1];          // Set of transaction segments
+// static int i2c_read(const char *i2cDevFile, uint8_t i2c7bitAddr,
+//                                         uint8_t *pBuffer, int numBytes, uint8_t chipRegAddr, bool chipRegAddrFlag)
+// {
+//         int       fd;                                         // File descriptor
+//         const int slaveAddress = i2c7bitAddr;                 // Address of the I2C device
+//         int       retCode   = 0;
+//         int       bytesRead = 0;
+//         struct    i2c_msg msgs[2];                        // Low level representation of one segment of an I2C transaction
+//         struct    i2c_rdwr_ioctl_data msgset[1];          // Set of transaction segments
 
-        if ((fd = open(i2cDevFile, O_RDWR)) < 0) {        // Open port for reading and writing
-            RCLCPP_ERROR("Cannot open I2C def of %s with error %s", i2cDevFile, strerror(errno));
-            retCode = IO_ERR_DEV_OPEN_FAILED;
-            goto exitWithNoClose;
-        }
+//         if ((fd = open(i2cDevFile, O_RDWR)) < 0) {        // Open port for reading and writing
+//             RCLCPP_ERROR("Cannot open I2C def of %s with error %s", i2cDevFile, strerror(errno));
+//             retCode = IO_ERR_DEV_OPEN_FAILED;
+//             goto exitWithNoClose;
+//         }
 
-        if (chipRegAddrFlag) {
-                msgs[0].addr = slaveAddress;
-                msgs[0].flags = 0;                            // Write bit
-                msgs[0].len = 1;                              // Slave Address/byte written to I2C slave address
-                msgs[0].buf = &chipRegAddr;                   // Internal Chip Register Address
-                msgs[1].addr = slaveAddress;
-                msgs[1].flags = I2C_M_RD | I2C_M_NOSTART;     // Read bit or Combined transaction bit
-                msgs[1].len = numBytes;                       // Number of bytes read
-                msgs[1].buf = pBuffer;                        // Output read buffer
+//         if (chipRegAddrFlag) {
+//                 msgs[0].addr = slaveAddress;
+//                 msgs[0].flags = 0;                            // Write bit
+//                 msgs[0].len = 1;                              // Slave Address/byte written to I2C slave address
+//                 msgs[0].buf = &chipRegAddr;                   // Internal Chip Register Address
+//                 msgs[1].addr = slaveAddress;
+//                 msgs[1].flags = I2C_M_RD | I2C_M_NOSTART;     // Read bit or Combined transaction bit
+//                 msgs[1].len = numBytes;                       // Number of bytes read
+//                 msgs[1].buf = pBuffer;                        // Output read buffer
 
-                msgset[0].msgs = msgs;
-                msgset[0].nmsgs = 2;                          // number of transaction segments (write and read)
+//                 msgset[0].msgs = msgs;
+//                 msgset[0].nmsgs = 2;                          // number of transaction segments (write and read)
 
-                // The ioctl here will execute I2C transaction with kernel enforced lock
-                if (ioctl(fd, I2C_RDWR, &msgset) < 0) {
-                        RCLCPP_ERROR("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
-                        retCode = IO_ERR_IOCTL_ADDR_SET;
-                        goto exitWithFileClose;
-                }
-        }
-        else {
-    // The ioctl here will address the I2C slave device making it ready for 1 or more other bytes
-            if (ioctl(fd, I2C_SLAVE, slaveAddress) != 0) {    // Set the port options and addr of the dev
-                    RCLCPP_ERROR("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
-                    retCode = IO_ERR_IOCTL_ADDR_SET;
-                    goto exitWithFileClose;
-            }
+//                 // The ioctl here will execute I2C transaction with kernel enforced lock
+//                 if (ioctl(fd, I2C_RDWR, &msgset) < 0) {
+//                         RCLCPP_ERROR("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+//                         retCode = IO_ERR_IOCTL_ADDR_SET;
+//                         goto exitWithFileClose;
+//                 }
+//         }
+//         else {
+//     // The ioctl here will address the I2C slave device making it ready for 1 or more other bytes
+//             if (ioctl(fd, I2C_SLAVE, slaveAddress) != 0) {    // Set the port options and addr of the dev
+//                     RCLCPP_ERROR("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+//                     retCode = IO_ERR_IOCTL_ADDR_SET;
+//                     goto exitWithFileClose;
+//             }
 
-                bytesRead = read(fd, pBuffer, numBytes);
-                if (bytesRead != numBytes) {                  // Verify that the number of bytes we requested were read
-                    RCLCPP_ERROR("Failed to read from I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
-                    retCode = IO_ERR_READ_FAILED;
-                    goto exitWithFileClose;
-                }
-        }
-        exitWithFileClose:
-        close(fd);
+//                 bytesRead = read(fd, pBuffer, numBytes);
+//                 if (bytesRead != numBytes) {                  // Verify that the number of bytes we requested were read
+//                     RCLCPP_ERROR("Failed to read from I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+//                     retCode = IO_ERR_READ_FAILED;
+//                     goto exitWithFileClose;
+//                 }
+//         }
+//         exitWithFileClose:
+//         close(fd);
 
-        exitWithNoClose:
+//         exitWithNoClose:
 
-        // Read is odd in that + is num bytes read so make errors negative
-        if (retCode == 0) {
-                retCode = numBytes;
-        } else {
-                retCode = retCode * -1;
-        }
+//         // Read is odd in that + is num bytes read so make errors negative
+//         if (retCode == 0) {
+//                 retCode = numBytes;
+//         } else {
+//                 retCode = retCode * -1;
+//         }
 
-        return retCode;
-}
+//         return retCode;
+// }
 
-/*
- * @name                i2c_write
- * @brief               Write one or more bytes to the I2C based device
- *
- * @param               i2cDevFile       Name of the I2C Device
- * @param               i2c7bitAddr      7-bit I2C bus address
- * @param               pBuffer          User 8-bit buffer for data input
- * @param               numBytes         Number of bytes to be written to the chip
- *
- * @return              Returns 0 for ok. Non-zero are bit-encoded failures
- */
+// /*
+//  * @name                i2c_write
+//  * @brief               Write one or more bytes to the I2C based device
+//  *
+//  * @param               i2cDevFile       Name of the I2C Device
+//  * @param               i2c7bitAddr      7-bit I2C bus address
+//  * @param               pBuffer          User 8-bit buffer for data input
+//  * @param               numBytes         Number of bytes to be written to the chip
+//  *
+//  * @return              Returns 0 for ok. Non-zero are bit-encoded failures
+//  */
 
-static int i2c_write(const char *i2cDevFile, uint8_t i2c7bitAddr, uint8_t *pBuffer, int numBytes)
-{
-        int        fd;                      // File descriptor
-        int        retCode = 0;
-        const int  slaveAddress = i2c7bitAddr;      // Address of the I2C device
+// static int i2c_write(const char *i2cDevFile, uint8_t i2c7bitAddr, uint8_t *pBuffer, int numBytes)
+// {
+//         int        fd;                      // File descriptor
+//         int        retCode = 0;
+//         const int  slaveAddress = i2c7bitAddr;      // Address of the I2C device
 
-        // Open port for writing
-        if ((fd = open(i2cDevFile, O_WRONLY)) < 0) {
-            RCLCPP_ERROR_ONCE("Cannot open I2C def of %s with error %s", i2cDevFile, strerror(errno));
-            retCode = IO_ERR_DEV_OPEN_FAILED;
-            goto exitWithNoClose;
-        }
+//         // Open port for writing
+//         if ((fd = open(i2cDevFile, O_WRONLY)) < 0) {
+//             RCLCPP_ERROR_ONCE("Cannot open I2C def of %s with error %s", i2cDevFile, strerror(errno));
+//             retCode = IO_ERR_DEV_OPEN_FAILED;
+//             goto exitWithNoClose;
+//         }
 
-        // The ioctl here will address the I2C slave device making it ready for 1 or more other bytes
-        if (ioctl(fd, I2C_SLAVE, slaveAddress) != 0) {  // Set the port options and addr of the dev
-            RCLCPP_ERROR_ONCE("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
-            retCode = IO_ERR_IOCTL_ADDR_SET;
-            goto exitWithFileClose;
-        }
+//         // The ioctl here will address the I2C slave device making it ready for 1 or more other bytes
+//         if (ioctl(fd, I2C_SLAVE, slaveAddress) != 0) {  // Set the port options and addr of the dev
+//             RCLCPP_ERROR_ONCE("Failed to get bus access to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+//             retCode = IO_ERR_IOCTL_ADDR_SET;
+//             goto exitWithFileClose;
+//         }
 
-        if (write(fd, pBuffer, numBytes) != numBytes) {
-                RCLCPP_ERROR_ONCE("Failed to write to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
-                retCode = IO_ERR_WRITE_FAILED;
-                goto exitWithFileClose;
-        }
+//         if (write(fd, pBuffer, numBytes) != numBytes) {
+//                 RCLCPP_ERROR_ONCE("Failed to write to I2C device %s!  ERROR: %s", i2cDevFile, strerror(errno));
+//                 retCode = IO_ERR_WRITE_FAILED;
+//                 goto exitWithFileClose;
+//         }
 
-        exitWithFileClose:
-        close(fd);
+//         exitWithFileClose:
+//         close(fd);
 
-        exitWithNoClose:
+//         exitWithNoClose:
 
-        return retCode;
-}
+//         return retCode;
+// }
 
 /*
  * @name                dispOled_detectDisplayType

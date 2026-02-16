@@ -1,5 +1,5 @@
 /*
- * OledSubscribers - Subscribe to the topics providing input for the display
+ * OLED I2C - Comms to I2C Devices
  * 
  * Copyright (C) 2025 Jason Piszcyk
  * Email: Jason.Piszcyk@gmail.com
@@ -58,8 +58,8 @@
 /******************************************************************************
  * Start Define Guard
  ******************************************************************************/
-#ifndef OLED_DISPLAY_NODE_OLED_SUBSCRIBERS_HPP_
-#define OLED_DISPLAY_NODE_OLED_SUBSCRIBERS_HPP_
+#ifndef OLED_DISPLAY_NODE_OLED_I2C_HPP_
+#define OLED_DISPLAY_NODE_OLED_I2C_HPP_
 
 /******************************************************************************
  *
@@ -67,8 +67,8 @@
  *
  ******************************************************************************/
 // System
-#include <string>
 #include <cstdint>
+#include <utility>
 
 // Local
 #include "rclcpp/rclcpp.hpp"
@@ -80,25 +80,22 @@
  *
  ******************************************************************************/
 //
-// Type Defs
-//
-
-//
 // Constants
 //
-inline const std::string DEFAULT_I2C_DEVICE = "/dev/i2c-1";
-inline const int DEFAULT_I2C_SLAVE_ADDRESS = 0x3C;
-inline const uint8_t DEFAULT_I2C_CHIP_REGISTER_ADDRESS = 0x00;
+// Some bit-encoded errors for access to the OLED display
+inline const int IO_ERR_DEV_OPEN_FAILED  = 0x02;
+inline const int IO_ERR_IOCTL_ADDR_SET   = 0x04;
+inline const int IO_ERR_WRITE_FAILED     = 0x08;
+inline const int IO_ERR_READ_FAILED      = 0x10;
+inline const int IO_ERR_READ_LENGTH      = 0x20;
+inline const int IO_ERR_BAD_DISP_CONTEXT = 0x80;
 
-inline const std::string OLED_NODE_NAME = "oled_display_node";
-inline const std::string OLED_TOPIC_SUBSCRIBER = "oled_topic_subscriber";
-inline const std::string TOPIC_DISPLAY_NODE = "display_node";
-inline const std::string TOPIC_BATTERY = "battery_state";
-inline const std::string TOPIC_MOTOR = "motor_power_active";
-inline const std::string TOPIC_FIRMWARE = "firmware_version";
+// Reading/Writing
+inline const int I2C_BUFFER_SIZE = 16;
 
-inline const int SUB_QOS_PROFILE = 100;
-// inline const rmw_qos_profile_t SUB_QOS_PROFILE = 100;
+//
+// Type Defs
+//
 
 
 /******************************************************************************
@@ -106,21 +103,30 @@ inline const int SUB_QOS_PROFILE = 100;
  * Class Declaration
  *
  ******************************************************************************/
-class OledSubscribers : public rclcpp::Node
+class OLEDI2C
 {
   public:
     // Constructor
-    OledSubscribers();
+    OLEDI2C(
+      const char * i2c_device,
+      int i2c_slave_address,
+      uint8_t i2c_chip_reg_addr,
+      rclcpp::Logger rclcpp_logger
+    );
 
     // Methods
-    // void exampleMethod();
+    std::tuple<int, uint8_t*> read();
+    int write(uint8_t *buffer, int num_bytes);
 
   private:
-    int exampleAttribute; // Data member (attribute)
+    const char * dev;
+    int slave_address;
+    uint8_t chip_register_address;
+    rclcpp::Logger logger;
 };
 
 
 /******************************************************************************
  * End Define Guard
  ******************************************************************************/
-#endif /* OLED_DISPLAY_NODE_OLED_SUBSCRIBERS_HPP_ */
+#endif /* OLED_DISPLAY_NODE_OLED_I2C_HPP_ */
