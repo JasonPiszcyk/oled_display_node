@@ -1,5 +1,5 @@
 /*
- * OLED I2C - Comms to I2C Devices
+ * OLED Display - Mange the OLED Display
  * 
  * Copyright (C) 2025 Jason Piszcyk
  * Email: Jason.Piszcyk@gmail.com
@@ -71,23 +71,18 @@
  *
  ******************************************************************************/
 // System
-// #include <iostream>
+#include <stdexcept>
+#include <system_error>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 #include <unistd.h>
-#include <errno.h>
+// #include <errno.h>
 #include <string.h>
 #include <utility>
 #include <cstdint>
-// #include <cstdio>
-// #include <cstdlib>
-// #include <cstring>
-
-// #include <sys/types.h>
-// #include <sys/time.h>
-// #include <sys/stat.h>
+#include <cstring>
 
 // Local
 #include "oled_display_node/oled_i2c.hpp"
@@ -107,10 +102,8 @@
 // @param   i2c_chip_reg_addr - The I2C Chip register address
 // @param   rclcpp_logger - A logger from rclcpp
 //
-// @return  void
-//
 OLEDI2C::OLEDI2C(
-  const char * i2c_device,
+  std::string i2c_device,
   int i2c_slave_address,
   uint8_t i2c_chip_reg_addr,
   rclcpp::Logger rclcpp_logger
@@ -119,23 +112,24 @@ OLEDI2C::OLEDI2C(
   slave_address(i2c_slave_address),
   chip_register_address(i2c_chip_reg_addr),
   logger(rclcpp_logger)
-{
-  // nothing to do!
-}
+{}
 
 
 //
 // @brief   Read from the I2C Device
 //
-// @return  tuple<int, uint8_t*> - A return code and a buffer containing the
-//          data that was read
+// @return  std::array<uint8_t, I2C_BUFFER_SIZE> - A buffer containing the data
+//          that was read
 //
-std::tuple<int, uint8_t*> OLEDI2C::read()
+// @note    Throws 'std::invalid_argument' when I2C device cannot be opened
+//          Throws 'std::runtime_error' when read of I2C device fails
+//
+std::array<uint8_t, I2C_BUFFER_SIZE> OLEDI2C::read()
 {
   bool i2c_open = false;
   int fd;
-  int ret_code = 0;
-  static uint8_t buffer[I2C_BUFFER_SIZE];
+  std::array<uint8_t, I2C_BUFFER_SIZE> buffer;
+  std::string err_msg = "";
 
   // Internal Chip Register Address
   uint8_t chip_reg_addr = this->chip_register_address;
@@ -147,16 +141,21 @@ std::tuple<int, uint8_t*> OLEDI2C::read()
   struct i2c_rdwr_ioctl_data msgset[1];
 
   // Clear the buffer
-  for (int i=0 ; i < I2C_BUFFER_SIZE ; i++) {
+  for (int i=0 ; i < buffer.size() ; i++) {
     buffer[i] = 0;
   }
 
-  if ((fd = open(this->dev, O_RDWR)) < 0) {
+  if ((fd = open(this->dev.c_str(), O_RDWR)) < 0) {
+    std::error_code err_code(errno, std::generic_category());
+
     RCLCPP_ERROR(
       this->logger,
-      "Cannot open I2C def of %s with error %s", this->dev, strerror(errno)
+      "Cannot open I2C def of %s with error %s", this->dev, err_code.message()
     );
-    ret_code = IO_ERR_DEV_OPEN_FAILED;
+
+    err_msg = "Cannot open device (" + this->dev + ") - " + err_code.message();
+    throw std::invalid_argument(err_msg);
+
   } else {
     i2c_open = true;
   }
@@ -175,7 +174,7 @@ std::tuple<int, uint8_t*> OLEDI2C::read()
     // Number of bytes read
     msgs[1].len = 1;
     // Output read buffer
-    msgs[1].buf = &buffer[0];
+    msgs[1].buf = buffer.data();
 
     msgset[0].msgs = msgs;
     // number of transaction segments (write and read)
@@ -183,27 +182,26 @@ std::tuple<int, uint8_t*> OLEDI2C::read()
 
     // The ioctl here will execute I2C transaction with kernel enforced lock
     if (ioctl(fd, I2C_RDWR, &msgset) < 0) {
+      std::error_code err_code(errno, std::generic_category());
+
       RCLCPP_ERROR(
         this->logger,
         "Failed to get bus access to I2C device %s!  ERROR: %s",
-        this->dev, strerror(errno)
+        this->dev, err_code.message()
       );
-      ret_code = IO_ERR_IOCTL_ADDR_SET;
+
+      err_msg = "Cannot access device (" + this->dev + ") - " + 
+                err_code.message();
+      throw std::runtime_error(err_msg);
+
     }
   }
 
   if (i2c_open) {
     close(fd);
-  } else {
-    // Read is odd in that + is num bytes read so make errors negative
-    if (ret_code == 0) {
-      ret_code = 1;
-    } else {
-      ret_code = ret_code * -1;
-    }
   }
 
-  return std::make_tuple(ret_code, buffer);
+  return buffer;
 }
 
 
@@ -213,44 +211,61 @@ std::tuple<int, uint8_t*> OLEDI2C::read()
 // @param   buffer - Buffer containing the data to write
 // @param   num_bytes - Number of bytes to be written
 //
-// @return  int - Returns 0 for ok. Non-zero are bit-encoded failures
+// @return  void
 //
-int OLEDI2C::write(uint8_t *buffer, int num_bytes)
+// @note    Throws 'std::invalid_argument' when I2C device cannot be opened
+//          Throws 'std::runtime_error' when write to I2C device fails
+//
+void OLEDI2C::write(std::array<uint8_t, I2C_BUFFER_SIZE> buffer, int num_bytes)
 {
   int fd;
-  int ret_code = 0;
-  // const int  slaveAddress = i2c7bitAddr;      // Address of the I2C device
+  std::string err_msg = "";
 
   // Open port for writing
-  if ((fd = open(this->dev, O_WRONLY)) < 0) {
-      RCLCPP_ERROR_ONCE(
-        this->logger,
-        "Cannot open I2C def of %s with error %s", this->dev, strerror(errno)
-      );
-      ret_code = IO_ERR_DEV_OPEN_FAILED;
+  if ((fd = open(this->dev.c_str(), O_WRONLY)) < 0) {
+    std::error_code err_code(errno, std::generic_category());
+
+    RCLCPP_ERROR_ONCE(
+      this->logger,
+      "Cannot open I2C def of %s with error %s", this->dev, err_code.message()
+    );
+
+    err_msg = "Cannot open device (" + this->dev + ") - " + err_code.message();
+    throw std::invalid_argument(err_msg);
+
   } else {
 
     if (ioctl(fd, I2C_SLAVE, this->slave_address) != 0) {
-        RCLCPP_ERROR_ONCE(
-          this->logger,
-          "Failed to get bus access to I2C device %s!  ERROR: %s",
-          this->dev, strerror(errno)
-        );
-        ret_code = IO_ERR_IOCTL_ADDR_SET;
+      std::error_code err_code(errno, std::generic_category());
+
+      RCLCPP_ERROR_ONCE(
+        this->logger,
+        "Failed to get bus access to I2C device %s!  ERROR: %s",
+        this->dev, err_code.message()
+      );
+
+      err_msg = "Cannot access device (" + this->dev + ") - " + 
+                err_code.message();
+      throw std::runtime_error(err_msg);
+
     } else {
 
-      if (::write(fd, buffer, num_bytes) != num_bytes) {
-            RCLCPP_ERROR_ONCE(
-              this->logger,
-              "Failed to write to I2C device %s!  ERROR: %s",
-              this->dev, strerror(errno)
-            );
-            ret_code = IO_ERR_WRITE_FAILED;
+      if (::write(fd, buffer.data(), num_bytes) != num_bytes) {
+        std::error_code err_code(errno, std::generic_category());
+
+        RCLCPP_ERROR_ONCE(
+          this->logger,
+          "Failed to write to I2C device %s!  ERROR: %s",
+          this->dev, strerror(errno)
+        );
+
+        err_msg = "Cannot access device (" + this->dev + ") - " + 
+                  err_code.message();
+        throw std::runtime_error(err_msg);
+
       }
     }
 
     close(fd);
   }
-
-  return ret_code;
 }

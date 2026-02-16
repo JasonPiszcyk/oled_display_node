@@ -377,57 +377,57 @@ static uint8_t sh1106_init_bytes[SH1106_INIT_BYTE_COUNT] = {
  *                      Returns DISPLAY_TYPE_NONE for I2C error due to no device detected
  */
 
-#define MX_DEV_NAME_LEN 32
-int dispOled_detectDisplayType(std::string devName, uint8_t i2c7bitAddr, int *dispType)
-{
-        uint8_t buf[16];
-        int     retCode = 0;
-        int     retCount = 0;
-        int     i = 0;
-        int     vote1106 = 0;
-        int     vote1306 = 0;
-        char    device[MX_DEV_NAME_LEN];
-        strncpy(&device[0], devName.c_str(), MX_DEV_NAME_LEN);
-        device[(MX_DEV_NAME_LEN-1)] = 0;     // protect against long dev names
+// #define MX_DEV_NAME_LEN 32
+// int dispOled_detectDisplayType(std::string devName, uint8_t i2c7bitAddr, int *dispType)
+// {
+//         uint8_t buf[16];
+//         int     retCode = 0;
+//         int     retCount = 0;
+//         int     i = 0;
+//         int     vote1106 = 0;
+//         int     vote1306 = 0;
+//         char    device[MX_DEV_NAME_LEN];
+//         strncpy(&device[0], devName.c_str(), MX_DEV_NAME_LEN);
+//         device[(MX_DEV_NAME_LEN-1)] = 0;     // protect against long dev names
 
-        // We have seen incorrect values read sometimes and because this chip relies on
-        // a status register in the SH1106 we better read a few times and 'vote'
-        for (i=0 ; i < 5 ; i++) {
-                // Read the status register at chip addr 0 to decide on chip type - set flag to true
-                retCount = i2c_read(&device[0], i2c7bitAddr, &buf[0], 1, 0x00, true);
-                if (retCount < 0) {
-                        RCLCPP_ERROR("Error 0x%x in reading OLED status register at 7bit I2CAddr 0x%x",
-                                retCount, i2c7bitAddr);
-                        *dispType = DISPLAY_TYPE_NONE;
-                        retCode = IO_ERR_READ_FAILED;
-                } else if (retCount != 1) {
-                        RCLCPP_ERROR("Cannot read byte from OLED status register at 7bit Addr 0x%x",
-                        i2c7bitAddr);
-                        *dispType = DISPLAY_TYPE_NONE;
-                        retCode = IO_ERR_READ_LENGTH;;
-                } else {
-                        RCLCPP_INFO("Read OLED status register as 0x%02x on pass %d", buf[0],i);
-                        if ((buf[0] & 0x07) == 0x06) {
-                                // We found lower 3 bit as a 6 but datasheet does not spec it
-                                vote1306++;
-                        } else {
-                                // Data sheet guarentees lower 3 bits as 0
-                                // We are going to vote by assumption that this is a SSD1306
-                                vote1106++;
-                        }
-                }
-                usleep(30000);
-        }
+//         // We have seen incorrect values read sometimes and because this chip relies on
+//         // a status register in the SH1106 we better read a few times and 'vote'
+//         for (i=0 ; i < 5 ; i++) {
+//                 // Read the status register at chip addr 0 to decide on chip type - set flag to true
+//                 retCount = i2c_read(&device[0], i2c7bitAddr, &buf[0], 1, 0x00, true);
+//                 if (retCount < 0) {
+//                         RCLCPP_ERROR("Error 0x%x in reading OLED status register at 7bit I2CAddr 0x%x",
+//                                 retCount, i2c7bitAddr);
+//                         *dispType = DISPLAY_TYPE_NONE;
+//                         retCode = IO_ERR_READ_FAILED;
+//                 } else if (retCount != 1) {
+//                         RCLCPP_ERROR("Cannot read byte from OLED status register at 7bit Addr 0x%x",
+//                         i2c7bitAddr);
+//                         *dispType = DISPLAY_TYPE_NONE;
+//                         retCode = IO_ERR_READ_LENGTH;;
+//                 } else {
+//                         RCLCPP_INFO("Read OLED status register as 0x%02x on pass %d", buf[0],i);
+//                         if ((buf[0] & 0x07) == 0x06) {
+//                                 // We found lower 3 bit as a 6 but datasheet does not spec it
+//                                 vote1306++;
+//                         } else {
+//                                 // Data sheet guarentees lower 3 bits as 0
+//                                 // We are going to vote by assumption that this is a SSD1306
+//                                 vote1106++;
+//                         }
+//                 }
+//                 usleep(30000);
+//         }
 
-        // count the votes and set display type
-        if (vote1106 > vote1306) {
-                *dispType = DISPLAY_TYPE_SH1106;
-        } else {
-                *dispType = DISPLAY_TYPE_SSD1306;
-        }
+//         // count the votes and set display type
+//         if (vote1106 > vote1306) {
+//                 *dispType = DISPLAY_TYPE_SH1106;
+//         } else {
+//                 *dispType = DISPLAY_TYPE_SSD1306;
+//         }
 
-        return retCode;
-}
+//         return retCode;
+// }
 
 /*
  * @name                dispOled_initCtx

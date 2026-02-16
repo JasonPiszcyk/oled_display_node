@@ -1,5 +1,5 @@
 /*
- * OLED I2C - Comms to I2C Devices
+ * OLED Display - Mange the OLED Display
  * 
  * Copyright (C) 2025 Jason Piszcyk
  * Email: Jason.Piszcyk@gmail.com
@@ -58,8 +58,8 @@
 /******************************************************************************
  * Start Define Guard
  ******************************************************************************/
-#ifndef OLED_DISPLAY_NODE_OLED_I2C_HPP_
-#define OLED_DISPLAY_NODE_OLED_I2C_HPP_
+#ifndef OLED_DISPLAY_NODE_OLED_DISPLAY_HPP_
+#define OLED_DISPLAY_NODE_OLED_DISPLAY_HPP_
 
 /******************************************************************************
  *
@@ -70,8 +70,10 @@
 #include <cstring>
 #include <cstdint>
 #include <utility>
+#include <memory>
 
 // Local
+#include "oled_display_node/oled_i2c.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 
@@ -83,8 +85,12 @@
 //
 // Constants
 //
-inline const int I2C_BUFFER_SIZE = 16;
+inline const uint8_t DISPLAY_TYPE_NONE = 0;
+inline const uint8_t DISPLAY_TYPE_AUTO = 0;
+inline const uint8_t DISPLAY_TYPE_SSD1306 = 1;    // 0.96" 128x64
+inline const uint8_t DISPLAY_TYPE_SH1106 = 2;     // 1.3" diagonal 128x64
 
+inline const uint64_t DISPLAY_DETECT_SLEEP_TIME = 30; // milliseconds
 //
 // Type Defs
 //
@@ -95,11 +101,11 @@ inline const int I2C_BUFFER_SIZE = 16;
  * Class Declaration
  *
  ******************************************************************************/
-class OLEDI2C
+class OLEDDisplay
 {
   public:
-    // Constructors
-    OLEDI2C(
+    // Constructor
+    OLEDDisplay(
       std::string i2c_device,
       int i2c_slave_address,
       uint8_t i2c_chip_reg_addr,
@@ -107,18 +113,19 @@ class OLEDI2C
     );
 
     // Methods
-    std::array<uint8_t, I2C_BUFFER_SIZE> read();
-    void write(std::array<uint8_t, I2C_BUFFER_SIZE> buffer, int num_bytes);
+    int OLEDDisplay::detect();
 
   private:
     std::string dev;
     int slave_address;
     uint8_t chip_register_address;
     rclcpp::Logger logger;
+
+    std::shared_ptr<OLEDI2C> i2cdev;
 };
 
 
 /******************************************************************************
  * End Define Guard
  ******************************************************************************/
-#endif /* OLED_DISPLAY_NODE_OLED_I2C_HPP_ */
+#endif /* OLED_DISPLAY_NODE_OLED_DISPLAY_HPP_ */

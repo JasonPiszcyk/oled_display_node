@@ -56,26 +56,6 @@
 
 
 /******************************************************************************
- * Start Define Guard
- ******************************************************************************/
-#ifndef OLED_DISPLAY_NODE_OLED_I2C_HPP_
-#define OLED_DISPLAY_NODE_OLED_I2C_HPP_
-
-/******************************************************************************
- *
- * Includes
- *
- ******************************************************************************/
-// System
-#include <cstring>
-#include <cstdint>
-#include <utility>
-
-// Local
-#include "rclcpp/rclcpp.hpp"
-
-
-/******************************************************************************
  *
  * Definitions
  *
@@ -83,42 +63,112 @@
 //
 // Constants
 //
-inline const int I2C_BUFFER_SIZE = 16;
-
-//
-// Type Defs
-//
 
 
 /******************************************************************************
  *
- * Class Declaration
+ * Includes
  *
  ******************************************************************************/
-class OLEDI2C
+// System
+#include <stdexcept>
+// #include <system_error>
+#include <memory>
+#include <chrono>
+
+// Local
+#include "oled_display_node/oled_display.hpp"
+#include "oled_display_node/oled_i2c.hpp"
+#include "rclcpp/rclcpp.hpp"
+
+
+/******************************************************************************
+ *
+ * Class Definition
+ *
+ ******************************************************************************/
+//
+// @brief   Initialisation/constructor for the instance
+//
+// @param   i2c_device - The device to use for I2C comms
+//
+// @return  void
+//
+OLEDDisplay::OLEDDisplay(
+  std::string i2c_device,
+  int i2c_slave_address,
+  uint8_t i2c_chip_reg_addr,
+  rclcpp::Logger rclcpp_logger
+) : 
+  dev(i2c_device),
+  slave_address(i2c_slave_address),
+  chip_register_address(i2c_chip_reg_addr),
+  logger(rclcpp_logger)
 {
-  public:
-    // Constructors
-    OLEDI2C(
-      std::string i2c_device,
-      int i2c_slave_address,
-      uint8_t i2c_chip_reg_addr,
-      rclcpp::Logger rclcpp_logger
-    );
-
-    // Methods
-    std::array<uint8_t, I2C_BUFFER_SIZE> read();
-    void write(std::array<uint8_t, I2C_BUFFER_SIZE> buffer, int num_bytes);
-
-  private:
-    std::string dev;
-    int slave_address;
-    uint8_t chip_register_address;
-    rclcpp::Logger logger;
-};
+  // Create the instance of the I2C device
+  i2cdev = std::make_shared<OLEDI2C>(
+        dev, slave_address, chip_register_address, logger
+  );
+}
 
 
-/******************************************************************************
- * End Define Guard
- ******************************************************************************/
-#endif /* OLED_DISPLAY_NODE_OLED_I2C_HPP_ */
+//
+// @brief   Read from the I2C Device
+//
+// @return  int- The display type
+//
+// @note    Throws 'std::invalid_argument' when I2C device cannot be opened
+//          Throws 'std::runtime_error' when write to I2C device fails
+//
+int OLEDDisplay::detect()
+        // std::string devName, uint8_t i2c7bitAddr, int *dispType)
+{
+  std::array<uint8_t, I2C_BUFFER_SIZE> buffer;
+  uint8_t display_type = DISPLAY_TYPE_AUTO;
+
+  // Different devices being voted for
+  int vote1106 = 0;
+  int vote1306 = 0;
+
+  // We have seen incorrect values read sometimes and because this chip relies
+  // on a status register in the SH1106 we better read a few times and 'vote'
+  for (int i=0 ; i < 5 ; i++) {
+    // Read the status register at chip addr 0 to decide on chip type - set flag to true
+    try {
+      buffer = this->i2cdev->read();
+
+      RCLCPP_INFO(
+        this->logger,
+        "Read OLED status register as 0x%02x on pass %d", buffer, i
+      );
+
+      if ((buffer[0] & 0x07) == 0x06) {
+        // We found lower 3 bit as a 6 but datasheet does not spec it
+        vote1306++;
+      } else {
+        // Data sheet guarentees lower 3 bits as 0
+        // We are going to vote by assumption that this is a SSD1106
+        vote1106++;
+      }
+    }
+    catch(const std::invalid_argument& exc) {
+      // The device cannot be found
+      display_type = DISPLAY_TYPE_NONE;
+    }
+    catch(const std::runtime_error& exc) {
+      // Problem reading from the device
+      display_type = DISPLAY_TYPE_NONE;
+    }
+  }
+
+  rclcpp::sleep_for(std::chrono::milliseconds(DISPLAY_DETECT_SLEEP_TIME)); 
+
+  // count the votes and set display type
+  if (vote1106 > vote1306) {
+    display_type = DISPLAY_TYPE_SH1106;
+  } else {
+    display_type = DISPLAY_TYPE_SSD1306;
+  }
+
+  return display_type;
+}
