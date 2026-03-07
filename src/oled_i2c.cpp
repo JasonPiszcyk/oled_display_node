@@ -118,17 +118,16 @@ OLEDI2C::OLEDI2C(
 //
 // @brief   Read from the I2C Device
 //
-// @return  std::array<uint8_t, I2C_BUFFER_SIZE> - A buffer containing the data
-//          that was read
+// @return  std::vector<uint8_t> - A buffer containing the data that was read
 //
 // @note    Throws 'std::invalid_argument' when I2C device cannot be opened
 //          Throws 'std::runtime_error' when read of I2C device fails
 //
-std::array<uint8_t, I2C_BUFFER_SIZE> OLEDI2C::read()
+std::vector<uint8_t> OLEDI2C::read()
 {
   bool i2c_open = false;
   int fd;
-  std::array<uint8_t, I2C_BUFFER_SIZE> buffer;
+  std::vector<uint8_t> buffer(I2C_READ_BUFFER_SIZE, 0);
   std::string err_msg = "";
 
   // Internal Chip Register Address
@@ -139,11 +138,6 @@ std::array<uint8_t, I2C_BUFFER_SIZE> OLEDI2C::read()
 
   // Set of transaction segments
   struct i2c_rdwr_ioctl_data msgset[1];
-
-  // Clear the buffer
-  for (int i=0 ; i < buffer.size() ; i++) {
-    buffer[i] = 0;
-  }
 
   if ((fd = open(this->dev.c_str(), O_RDWR)) < 0) {
     std::error_code err_code(errno, std::generic_category());
@@ -209,14 +203,13 @@ std::array<uint8_t, I2C_BUFFER_SIZE> OLEDI2C::read()
 // @brief   Write to the I2c Device
 //
 // @param   buffer - Buffer containing the data to write
-// @param   num_bytes - Number of bytes to be written
 //
 // @return  void
 //
 // @note    Throws 'std::invalid_argument' when I2C device cannot be opened
 //          Throws 'std::runtime_error' when write to I2C device fails
 //
-void OLEDI2C::write(std::array<uint8_t, I2C_BUFFER_SIZE> buffer, int num_bytes)
+void OLEDI2C::write(std::vector<uint8_t> buffer)
 {
   int fd;
   std::string err_msg = "";
@@ -250,7 +243,7 @@ void OLEDI2C::write(std::array<uint8_t, I2C_BUFFER_SIZE> buffer, int num_bytes)
 
     } else {
 
-      if (::write(fd, buffer.data(), num_bytes) != num_bytes) {
+      if (::write(fd, buffer.data(), buffer.size()) != buffer.size()) {
         std::error_code err_code(errno, std::generic_category());
 
         RCLCPP_ERROR_ONCE(

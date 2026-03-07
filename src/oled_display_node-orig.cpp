@@ -214,31 +214,31 @@ void  getIpAddressses(std::string &ethAddress, std::string &wlanAddress, int log
 //  There is not 'internal chip register' for this device and instead it uses a funky protocol.
 //  A control byte is followed by a single byte or multiple bytes depending on the control byte.
 //  The chip interprits these 'packets' as command(s) or data byte(s) based on the leading control byte
-#define SSD1306_INIT_BYTE_COUNT         6
-static uint8_t ssd1306_init_bytes[SSD1306_INIT_BYTE_COUNT] = {
-                OLED_CONTROL_BYTE_CMD_STREAM,
-                                OLED_CMD_SET_CHARGE_PUMP,       0x14,
-                                OLED_CMD_SET_SEGMENT_REMAP,
-                                OLED_CMD_SET_COM_SCAN_MODE,
-                                OLED_CMD_DISPLAY_ON
-};
+// #define SSD1306_INIT_BYTE_COUNT         6
+// static uint8_t ssd1306_init_bytes[SSD1306_INIT_BYTE_COUNT] = {
+//                 OLED_CONTROL_BYTE_CMD_STREAM,
+//                                 OLED_CMD_SET_CHARGE_PUMP,       0x14,
+//                                 OLED_CMD_SET_SEGMENT_REMAP,
+//                                 OLED_CMD_SET_COM_SCAN_MODE,
+//                                 OLED_CMD_DISPLAY_ON
+// };
 
-#define SH1106_INIT_BYTE_COUNT  17
-static uint8_t sh1106_init_bytes[SH1106_INIT_BYTE_COUNT] = {
-                OLED_CONTROL_BYTE_CMD_STREAM,
-                                0x30,                           // Charge pump default
-                                0x40,                           // RAM display line of 0
-                                OLED_CMD_DISPLAY_OFF,
-                                OLED_CMD_SET_SEGMENT_REMAP,
-                                OLED_CMD_SET_COM_SCAN_MODE,
-                                OLED_CMD_SET_DISPLAY_OFFSET, 0, // Sets mapping of display start line
-                                OLED_CMD_DC_DC_CTRL_MODE, 0x8B, // Must have DISPLAY_OFF and follow tih 0x8B
-                                0x81, 0x80,         // Display contrast set to second byte
-                                OLED_CMD_DISPLAY_RAM,
-                                OLED_CMD_DISPLAY_NORMAL,
-                                OLED_CMD_SET_MUX_RATIO, 0x3F,   // Init multiplex ration to standard value
-                                OLED_CMD_DISPLAY_ON
-};
+// #define SH1106_INIT_BYTE_COUNT  17
+// static uint8_t sh1106_init_bytes[SH1106_INIT_BYTE_COUNT] = {
+//                 OLED_CONTROL_BYTE_CMD_STREAM,
+//                                 0x30,                           // Charge pump default
+//                                 0x40,                           // RAM display line of 0
+//                                 OLED_CMD_DISPLAY_OFF,
+//                                 OLED_CMD_SET_SEGMENT_REMAP,
+//                                 OLED_CMD_SET_COM_SCAN_MODE,
+//                                 OLED_CMD_SET_DISPLAY_OFFSET, 0, // Sets mapping of display start line
+//                                 OLED_CMD_DC_DC_CTRL_MODE, 0x8B, // Must have DISPLAY_OFF and follow tih 0x8B
+//                                 0x81, 0x80,         // Display contrast set to second byte
+//                                 OLED_CMD_DISPLAY_RAM,
+//                                 OLED_CMD_DISPLAY_NORMAL,
+//                                 OLED_CMD_SET_MUX_RATIO, 0x3F,   // Init multiplex ration to standard value
+//                                 OLED_CMD_DISPLAY_ON
+// };
 
 /*
  * @name                i2c_read
@@ -440,134 +440,134 @@ static uint8_t sh1106_init_bytes[SH1106_INIT_BYTE_COUNT] = {
  *
  * @return              Returns 0 for ok or -1 for IO error
  */
-int dispOled_initCtx(std::string devName, dispCtx_t *dispCtx, int dispType, uint8_t i2cAddr)
-{
-        int retCode = 0;
+// int dispOled_initCtx(std::string devName, dispCtx_t *dispCtx, int dispType, uint8_t i2cAddr)
+// {
+//         int retCode = 0;
 
-        dispCtx->dispType = dispType;
-        dispCtx->i2cAddr = i2cAddr;
-        strcpy(&dispCtx->devName[0], devName.c_str());
+//         dispCtx->dispType = dispType;
+//         dispCtx->i2cAddr = i2cAddr;
+//         strcpy(&dispCtx->devName[0], devName.c_str());
 
-        // Set max lines and horizontal segments for the display in use
-        switch (dispType) {
-        case DISPLAY_TYPE_SSD1306:
-                dispCtx->maxLine      = SSD1306_MAX_LINE;
-                dispCtx->maxColumn    = SSD1306_MAX_COLUMN;
-                dispCtx->maxVertPixel = SSD1306_MAX_VERT_PIXEL;
-                dispCtx->maxHorzPixel = SSD1306_MAX_HORZ_PIXEL;
-                dispCtx->horzOffset   = SSD1306_HORZ_OFFSET;
-                dispCtx->endHorzPixel = SSD1306_END_HORZ_PIXEL;
-                break;
-        case DISPLAY_TYPE_SH1106:
-                dispCtx->maxLine      = SH1106_MAX_LINE;
-                dispCtx->maxColumn    = SH1106_MAX_COLUMN;
-                dispCtx->maxVertPixel = SH1106_MAX_VERT_PIXEL;
-                dispCtx->maxHorzPixel = SH1106_MAX_HORZ_PIXEL;
-                dispCtx->horzOffset   = SH1106_HORZ_OFFSET;
-                dispCtx->endHorzPixel = SH1106_END_HORZ_PIXEL;
-                break;
-        default:
-                RCLCPP_ERROR("%s: Unsupported display type of %d\n", THIS_NODE_NAME, dispType);
-                retCode = IO_ERR_BAD_DISP_CONTEXT;
-                break;
-        }
+//         // Set max lines and horizontal segments for the display in use
+//         switch (dispType) {
+//         case DISPLAY_TYPE_SSD1306:
+//                 dispCtx->maxLine      = SSD1306_MAX_LINE;
+//                 dispCtx->maxColumn    = SSD1306_MAX_COLUMN;
+//                 dispCtx->maxVertPixel = SSD1306_MAX_VERT_PIXEL;
+//                 dispCtx->maxHorzPixel = SSD1306_MAX_HORZ_PIXEL;
+//                 dispCtx->horzOffset   = SSD1306_HORZ_OFFSET;
+//                 dispCtx->endHorzPixel = SSD1306_END_HORZ_PIXEL;
+//                 break;
+//         case DISPLAY_TYPE_SH1106:
+//                 dispCtx->maxLine      = SH1106_MAX_LINE;
+//                 dispCtx->maxColumn    = SH1106_MAX_COLUMN;
+//                 dispCtx->maxVertPixel = SH1106_MAX_VERT_PIXEL;
+//                 dispCtx->maxHorzPixel = SH1106_MAX_HORZ_PIXEL;
+//                 dispCtx->horzOffset   = SH1106_HORZ_OFFSET;
+//                 dispCtx->endHorzPixel = SH1106_END_HORZ_PIXEL;
+//                 break;
+//         default:
+//                 RCLCPP_ERROR("%s: Unsupported display type of %d\n", THIS_NODE_NAME, dispType);
+//                 retCode = IO_ERR_BAD_DISP_CONTEXT;
+//                 break;
+//         }
 
-        return 0;
-}
+//         return 0;
+// }
 
-/*
- * @name                dispOled_init
- * @brief               Initialize the small OLED display
- *
- * @param               devName         Name of the I2C output device
- * @param               dispCtx         Context for display that this command will populate
- * @param               displayType     Type of display. DISPLAY_TYPE_SSD1306 or DISPLAY_TYPE_SH1106
- * @param               i2cAddr         7-bit I2C bus address
- *
- * @return              Returns 0 for ok.  Non-zero indicates a fault
- */
-int dispOled_init(std::string devName, dispCtx_t *dispCtx, int displayType, uint8_t i2cAddr)
-{
-        int retCode = 0;
-        int dispType = displayType;
+// /*
+//  * @name                dispOled_init
+//  * @brief               Initialize the small OLED display
+//  *
+//  * @param               devName         Name of the I2C output device
+//  * @param               dispCtx         Context for display that this command will populate
+//  * @param               displayType     Type of display. DISPLAY_TYPE_SSD1306 or DISPLAY_TYPE_SH1106
+//  * @param               i2cAddr         7-bit I2C bus address
+//  *
+//  * @return              Returns 0 for ok.  Non-zero indicates a fault
+//  */
+// int dispOled_init(std::string devName, dispCtx_t *dispCtx, int displayType, uint8_t i2cAddr)
+// {
+//         int retCode = 0;
+//         int dispType = displayType;
 
-        // If this is called with NONE we try to autodetect the display
-        if (dispType == DISPLAY_TYPE_AUTO) {
-                // Auto-detect display. Detects if display present and type of OLED display
-                retCode = dispOled_detectDisplayType(devName, i2cAddr, &dispType);
-                if (retCode != 0) {
-                        return retCode;
-                }
-        }
+//         // If this is called with NONE we try to autodetect the display
+//         if (dispType == DISPLAY_TYPE_AUTO) {
+//                 // Auto-detect display. Detects if display present and type of OLED display
+//                 retCode = dispOled_detectDisplayType(devName, i2cAddr, &dispType);
+//                 if (retCode != 0) {
+//                         return retCode;
+//                 }
+//         }
 
-        dispOled_initCtx(devName, dispCtx, dispType, i2cAddr);
+//         dispOled_initCtx(devName, dispCtx, dispType, i2cAddr);
 
-        //Send all the commands to fully initialize the device.
-        switch (dispCtx->dispType) {
-        case DISPLAY_TYPE_SSD1306:
-                // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
-                RCLCPP_INFO("%s Setup for SSD1306 controller on the OLED display.", THIS_NODE_NAME);
-                retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &ssd1306_init_bytes[0], SSD1306_INIT_BYTE_COUNT);
-                break;
-        case DISPLAY_TYPE_SH1106:
-                // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
-                RCLCPP_INFO("%s Setup for SH1106 controller on the OLED display.", THIS_NODE_NAME);
-                retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &sh1106_init_bytes[0], SH1106_INIT_BYTE_COUNT);
-                break;
-        default:
-                retCode = IO_ERR_BAD_DISP_CONTEXT;
-                break;
-        }
-        if (retCode != 0) {
-                RCLCPP_ERROR_ONCE("%s: Setup for OLED display failed with error 0x%04x", THIS_NODE_NAME, retCode);
-        }
+//         //Send all the commands to fully initialize the device.
+//         switch (dispCtx->dispType) {
+//         case DISPLAY_TYPE_SSD1306:
+//                 // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
+//                 RCLCPP_INFO("%s Setup for SSD1306 controller on the OLED display.", THIS_NODE_NAME);
+//                 retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &ssd1306_init_bytes[0], SSD1306_INIT_BYTE_COUNT);
+//                 break;
+//         case DISPLAY_TYPE_SH1106:
+//                 // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
+//                 RCLCPP_INFO("%s Setup for SH1106 controller on the OLED display.", THIS_NODE_NAME);
+//                 retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &sh1106_init_bytes[0], SH1106_INIT_BYTE_COUNT);
+//                 break;
+//         default:
+//                 retCode = IO_ERR_BAD_DISP_CONTEXT;
+//                 break;
+//         }
+//         if (retCode != 0) {
+//                 RCLCPP_ERROR_ONCE("%s: Setup for OLED display failed with error 0x%04x", THIS_NODE_NAME, retCode);
+//         }
 
-        return retCode;
-}
+//         return retCode;
+// }
 
-/*
- * @name                dispOled_setCursor
- * @brief               Move cursor to a given horizontal column and line
- *
- * @param               dispCtx         Context for display that holds type and hardware interface info
- * @param               column          The pixel resolution column from 0 to 127
- * @param               line            The line number where 0 is top line
- *
- * @return              Returns 0 for ok or -1 for IO error
- */
-int dispOled_setCursor(dispCtx_t *dispCtx, int column, int line) {
-                int retCode = 0;
-                uint8_t cursorSetup[8];
+// /*
+//  * @name                dispOled_setCursor
+//  * @brief               Move cursor to a given horizontal column and line
+//  *
+//  * @param               dispCtx         Context for display that holds type and hardware interface info
+//  * @param               column          The pixel resolution column from 0 to 127
+//  * @param               line            The line number where 0 is top line
+//  *
+//  * @return              Returns 0 for ok or -1 for IO error
+//  */
+// int dispOled_setCursor(dispCtx_t *dispCtx, int column, int line) {
+//                 int retCode = 0;
+//                 uint8_t cursorSetup[8];
 
-                switch (dispCtx->dispType) {
-                case DISPLAY_TYPE_SSD1306:
-                                cursorSetup[0] = OLED_CONTROL_BYTE_CMD_STREAM;
-                                cursorSetup[1] = OLED_CMD_SET_COLUMN_RANGE;
-                                cursorSetup[2] = column;            // Start of printing from left seg as 0
-                                cursorSetup[3] = dispCtx->maxHorzPixel;     // last index of printing segments
-                                cursorSetup[4] = OLED_CMD_SET_PAGE_RANGE;
-                                cursorSetup[5] = line;                      // We assume only one line written to at a time
-                                cursorSetup[6] = line;                      // We assume only one line written to at a time
+//                 switch (dispCtx->dispType) {
+//                 case DISPLAY_TYPE_SSD1306:
+//                                 cursorSetup[0] = OLED_CONTROL_BYTE_CMD_STREAM;
+//                                 cursorSetup[1] = OLED_CMD_SET_COLUMN_RANGE;
+//                                 cursorSetup[2] = column;            // Start of printing from left seg as 0
+//                                 cursorSetup[3] = dispCtx->maxHorzPixel;     // last index of printing segments
+//                                 cursorSetup[4] = OLED_CMD_SET_PAGE_RANGE;
+//                                 cursorSetup[5] = line;                      // We assume only one line written to at a time
+//                                 cursorSetup[6] = line;                      // We assume only one line written to at a time
 
-                                // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
-                                retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &cursorSetup[0], 7);
+//                                 // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
+//                                 retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &cursorSetup[0], 7);
 
-                case DISPLAY_TYPE_SH1106:
-                                // SH1106 has different addressing than SSD1306
-                                cursorSetup[0] = OLED_CONTROL_BYTE_CMD_STREAM;
-                                cursorSetup[1] = 0xB0 | (line & 0xf);
-                                cursorSetup[2] = 0x10 | (((column + dispCtx->horzOffset) & 0xf0) >> 4);  // Upper column address
-                                cursorSetup[3] = 0x00 | ((column + dispCtx->horzOffset)  & 0xf);         // Lower column address
+//                 case DISPLAY_TYPE_SH1106:
+//                                 // SH1106 has different addressing than SSD1306
+//                                 cursorSetup[0] = OLED_CONTROL_BYTE_CMD_STREAM;
+//                                 cursorSetup[1] = 0xB0 | (line & 0xf);
+//                                 cursorSetup[2] = 0x10 | (((column + dispCtx->horzOffset) & 0xf0) >> 4);  // Upper column address
+//                                 cursorSetup[3] = 0x00 | ((column + dispCtx->horzOffset)  & 0xf);         // Lower column address
 
-                                // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
-                                retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &cursorSetup[0], 4);
-                                break;
-                default:
-                                break;
-                }
+//                                 // We treat the 1st byte sort of like a 'register' but it is really a command stream mode to the chip
+//                                 retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &cursorSetup[0], 4);
+//                                 break;
+//                 default:
+//                                 break;
+//                 }
 
-                return retCode;
-}
+//                 return retCode;
+// }
 
 /*
  * @name                dispOled_clearDisplay
@@ -577,31 +577,31 @@ int dispOled_setCursor(dispCtx_t *dispCtx, int column, int line) {
  *
  * @return              Returns 0 for ok or -1 for IO error
  */
-int dispOled_clearDisplay(dispCtx_t *dispCtx) {
-                int retCode = 0;
+// int dispOled_clearDisplay(dispCtx_t *dispCtx) {
+//                 int retCode = 0;
 
-                uint8_t zero[140];
-                zero[0] = OLED_CONTROL_BYTE_DATA_STREAM;;
-                for (uint8_t idx = 1; idx < 136; idx++) {
-                                zero[idx] = 0;      // All 0 is blank vertical segments of 8 bits all across the row
-                }
-                for (uint8_t line = 0; line <= dispCtx->maxLine; line++) {
+//                 uint8_t zero[140];
+//                 zero[0] = OLED_CONTROL_BYTE_DATA_STREAM;;
+//                 for (uint8_t idx = 1; idx < 136; idx++) {
+//                                 zero[idx] = 0;      // All 0 is blank vertical segments of 8 bits all across the row
+//                 }
+//                 for (uint8_t line = 0; line <= dispCtx->maxLine; line++) {
 
-                                retCode |= dispOled_setCursor(dispCtx, 0, line);
-                                if (retCode != 0) {
-                                                return retCode;
-                                }
+//                                 retCode |= dispOled_setCursor(dispCtx, 0, line);
+//                                 if (retCode != 0) {
+//                                                 return retCode;
+//                                 }
 
-                                // Clear one line
-                                retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &zero[0], 
-                                        (dispCtx->maxHorzPixel+dispCtx->horzOffset)+dispCtx->endHorzPixel);
-                                if (retCode != 0) {
-                                                return retCode;
-                                }
-                }
+//                                 // Clear one line
+//                                 retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &zero[0], 
+//                                         (dispCtx->maxHorzPixel+dispCtx->horzOffset)+dispCtx->endHorzPixel);
+//                                 if (retCode != 0) {
+//                                                 return retCode;
+//                                 }
+//                 }
 
-                return retCode;
-}
+//                 return retCode;
+// }
 
 /*
  * @name                dispOled_writeText

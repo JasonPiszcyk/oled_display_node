@@ -75,6 +75,7 @@
 // #include <system_error>
 #include <memory>
 #include <chrono>
+#include <cstring>
 
 // Local
 #include "oled_display_node/oled_display.hpp"
@@ -91,6 +92,9 @@
 // @brief   Initialisation/constructor for the instance
 //
 // @param   i2c_device - The device to use for I2C comms
+// @param   i2c_slave_address - The I2C slave address
+// @param   i2c_chip_reg_addr - The I2C Chip register address
+// @param   rclcpp_logger - A logger from rclcpp
 //
 // @return  void
 //
@@ -109,22 +113,27 @@ OLEDDisplay::OLEDDisplay(
   i2cdev = std::make_shared<OLEDI2C>(
         dev, slave_address, chip_register_address, logger
   );
+
+  uint8_t display_type = DISPLAY_TYPE_AUTO;
+
+  // Display parameters
+  uint16_t max_line = 0;
+  uint16_t max_column = 0;
+  uint16_t max_vertical_pixel = 0;
+  uint16_t max_horizontal_pixel = 0;
+  uint16_t horizontal_offset = 0;
+  uint16_t end_horizontal_pixel = 0;
 }
 
 
 //
-// @brief   Read from the I2C Device
+// @brief   Detect the OLED display type
 //
-// @return  int- The display type
+// @return  void
 //
-// @note    Throws 'std::invalid_argument' when I2C device cannot be opened
-//          Throws 'std::runtime_error' when write to I2C device fails
-//
-int OLEDDisplay::detect()
-        // std::string devName, uint8_t i2c7bitAddr, int *dispType)
+void OLEDDisplay::detect()
 {
-  std::array<uint8_t, I2C_BUFFER_SIZE> buffer;
-  uint8_t display_type = DISPLAY_TYPE_AUTO;
+  std::vector<uint8_t> buffer(I2C_READ_BUFFER_SIZE, 0);
 
   // Different devices being voted for
   int vote1106 = 0;
@@ -153,11 +162,11 @@ int OLEDDisplay::detect()
     }
     catch(const std::invalid_argument& exc) {
       // The device cannot be found
-      display_type = DISPLAY_TYPE_NONE;
+      this->display_type = DISPLAY_TYPE_NONE;
     }
     catch(const std::runtime_error& exc) {
       // Problem reading from the device
-      display_type = DISPLAY_TYPE_NONE;
+      this->display_type = DISPLAY_TYPE_NONE;
     }
   }
 
@@ -165,10 +174,224 @@ int OLEDDisplay::detect()
 
   // count the votes and set display type
   if (vote1106 > vote1306) {
-    display_type = DISPLAY_TYPE_SH1106;
+    this->display_type = DISPLAY_TYPE_SH1106;
   } else {
-    display_type = DISPLAY_TYPE_SSD1306;
+    this->display_type = DISPLAY_TYPE_SSD1306;
+  }
+}
+
+
+//
+// @brief   Initialise the OLED display
+//
+// @return  void
+//
+// @note    Throws 'std::invalid_argument' when unable to determine device type
+//
+void OLEDDisplay::init()
+{
+  // Auto-detect display. Detects if display present and type of OLED display
+  if (this->display_type == DISPLAY_TYPE_AUTO) {
+    this->detect();
   }
 
-  return display_type;
+  switch (this->display_type) {
+    case DISPLAY_TYPE_SSD1306:
+      // We treat the 1st byte sort of like a 'register' but it is really a
+      // command stream mode to the chip
+      RCLCPP_INFO(
+        this->logger,
+        "Setup for SSD1306 controller on the OLED display."
+      );
+
+      this->i2cdev->write(ssd1306_init_bytes);
+
+      // Set characteristics for this display
+      this->max_line = SSD1306_MAX_LINE;
+      this->max_column = SSD1306_MAX_COLUMN;
+      this->max_vertical_pixel = SSD1306_MAX_VERTICAL_PIXEL;
+      this->max_horizontal_pixel = SSD1306_MAX_HORIZONTAL_PIXEL;
+      this->horizontal_offset = SSD1306_HORIZONTAL_OFFSET;
+      this->end_horizontal_pixel = SSD1306_END_HORIZONTAL_PIXEL;
+
+      break;
+
+    case DISPLAY_TYPE_SH1106:
+      // We treat the 1st byte sort of like a 'register' but it is really a 
+      // command stream mode to the chip
+      RCLCPP_INFO(
+        this->logger,
+        "Setup for SH1106 controller on the OLED display."
+      );
+
+      this->i2cdev->write(sh1106_init_bytes);
+
+      // Set characteristics for this display
+      this->max_line = SH1106_MAX_LINE;
+      this->max_column = SH1106_MAX_COLUMN;
+      this->max_vertical_pixel = SH1106_MAX_VERTICAL_PIXEL;
+      this->max_horizontal_pixel = SH1106_MAX_HORIZONTAL_PIXEL;
+      this->horizontal_offset = SH1106_HORIZONTAL_OFFSET;
+      this->end_horizontal_pixel = SH1106_END_HORIZONTAL_PIXEL;
+
+      break;
+
+    default:
+      throw std::invalid_argument("Unable to determine display type");
+      break;
+  }
+}
+
+
+//
+// @brief   Move cursor to a given horizontal column and line
+//
+// @param   line - The line number where 0 is top line
+// @param   column - The pixel resolution column from 0 to 127
+//
+// @return  void
+//
+// @note    Throws 'std::invalid_argument' when I2C device cannot be opened
+//          Throws 'std::runtime_error' when write to I2C device fails
+//
+void OLEDDisplay::set_cursor(uint16_t line, uint16_t column)
+{
+  std::vector<uint8_t> cursor_setup = {0};
+
+  switch (this->display_type) {
+    case DISPLAY_TYPE_SSD1306:
+      cursor_setup.assign(7, 0);
+
+      cursor_setup[0] = OLED_CONTROL_BYTE_CMD_STREAM;
+      cursor_setup[1] = OLED_CMD_SET_COLUMN_RANGE;
+      // Start of printing from left seg as 0
+      cursor_setup[2] = column;
+      // last index of printing segments
+      cursor_setup[3] = this->max_horizontal_pixel;
+      cursor_setup[4] = OLED_CMD_SET_PAGE_RANGE;
+      // We assume only one line written to at a time
+      cursor_setup[5] = line;
+      // We assume only one line written to at a time
+      cursor_setup[6] = line;
+
+      // We treat the 1st byte sort of like a 'register' but it is really a
+      // command stream mode to the chip
+      this->i2cdev->write(cursor_setup);
+
+      break;
+
+    case DISPLAY_TYPE_SH1106:
+      cursor_setup.assign(4, 0);
+
+      // SH1106 has different addressing than SSD1306
+      cursor_setup[0] = OLED_CONTROL_BYTE_CMD_STREAM;
+      cursor_setup[1] = 0xB0 | (line & 0xf);
+      // Upper column address
+      cursor_setup[2] = 0x10 | 
+          (((column + this->horizontal_offset) & 0xf0) >> 4);
+      // Lower column address
+      cursor_setup[3] = 0x00 | ((column + this->horizontal_offset)  & 0xf);
+
+      this->i2cdev->write(cursor_setup);
+
+      break;
+
+    default:
+      throw std::invalid_argument("Unable to determine display type");
+      break;
+  }
+}
+
+
+//
+// @brief   Clear the display
+//
+// @return  void
+//
+// @note    Throws 'std::invalid_argument' when I2C device cannot be opened
+//          Throws 'std::runtime_error' when write to I2C device fails
+//
+void OLEDDisplay::clear_display()
+{
+  uint16_t display_width = this->max_horizontal_pixel +
+          this->horizontal_offset + this->end_horizontal_pixel;
+  std::vector<uint8_t> zero(display_width, 0);
+
+  zero[0] = OLED_CONTROL_BYTE_DATA_STREAM;
+
+  for (uint16_t line = 0; line <= this->max_line; line++) {
+    // Clear the current line
+    this->set_cursor(line, 0);
+    this->i2cdev->write(zero);
+  }
+}
+
+
+//
+// @brief   Write text to the display
+//
+// @param   line - The line number to write the text on
+// @param   column - The pixel resolution column from 0 to 127
+//
+// @return  void
+//
+// @note    Throws 'std::invalid_argument' when line number is out of range
+//          Throws 'std::invalid_argument' when starting column doesn't allow
+//            text to fit
+//          Throws 'std::invalid_argument' when I2C device cannot be opened
+//          Throws 'std::runtime_error' when write to I2C device fails
+//
+void OLEDDisplay::write_text(
+    int16_t line,
+    uint16_t column,
+    std::string text,
+    bool center = false
+)
+  // dispCtx_t *dispCtx, uint8_t line, uint8_t segment, uint8_t center, const char *textStr)
+{
+  uint16_t display_width = this->max_horizontal_pixel +
+          this->horizontal_offset + this->end_horizontal_pixel;
+  std::vector<uint8_t> data(display_width, 0);
+  uint16_t start_column = column;
+
+  // const char    *text = textStr;
+  //       uint8_t       text_len = strlen(text);
+  //       uint8_t       dispData[DISPLAY_MAX_HORZ_PIXEL];
+  //       int           dispDataIdx = 1;
+
+  if (line > this->max_line) {
+    throw std::invalid_argument("Line number is out of range");
+  }
+
+  if ((column + (text.size() * DEFAULT_FONT_WIDTH))
+        > this->max_horizontal_pixel) {
+    // out of range starting column to end of the print with 8x8 font
+    throw std::invalid_argument(
+      "Text will not fit starting at column " + std::to_string(column)
+    );
+  }
+
+  // Data starts on byte after this 1st one
+  data[0] = OLED_CONTROL_BYTE_DATA_STREAM;
+
+  if (center) {
+    start_column = (this->max_horizontal_pixel - 
+          (text.size() * DEFAULT_FONT_WIDTH)) / 2;
+  }
+
+  this->set_cursor(line, start_column);
+
+
+        // Form pixels to send as data by lookup in font table
+        for (uint8_t i = 0; i < text_len; i++) {
+                        // For each column of pixels for this char send a data byte which is one vertical column of pixels
+                        for (uint8_t charCol = 0; charCol < DISPLAY_CHAR_WIDTH; charCol++) {
+                                        dispData[dispDataIdx++] = font8x8_basic_tr[(int)(text[i])][charCol];
+                        }
+        }
+
+  // Write the data to display
+        retCode |= i2c_write(&dispCtx->devName[0], dispCtx->i2cAddr, &dispData[0], dispDataIdx);
+  this->i2cdev->write(zero);
+
 }

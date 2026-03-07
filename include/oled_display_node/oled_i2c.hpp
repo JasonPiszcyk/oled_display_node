@@ -83,7 +83,7 @@
 //
 // Constants
 //
-inline const int I2C_BUFFER_SIZE = 16;
+inline const int I2C_READ_BUFFER_SIZE = 32;
 
 //
 // Type Defs
@@ -107,8 +107,8 @@ class OLEDI2C
     );
 
     // Methods
-    std::array<uint8_t, I2C_BUFFER_SIZE> read();
-    void write(std::array<uint8_t, I2C_BUFFER_SIZE> buffer, int num_bytes);
+    std::vector<uint8_t> read();
+    void write(std::vector<uint8_t> buffer);
 
   private:
     std::string dev;
